@@ -1,0 +1,69 @@
+sequenceDiagram
+    %% Định nghĩa các actor và thành phần
+    actor Client
+    participant Flask_API as Flask API (app.py)
+    participant ML_Library as ML Library (mlib.py)
+    participant Scikit_learn as Scikit-learn
+    participant MLflow
+
+    %% Health Check Flow
+    rect rgb(191, 223, 255)
+    note over Client, MLflow: Health Check Flow
+    Client->>+Flask_API: GET /health
+    Flask_API->>+ML_Library: Kiểm tra model.is_trained
+    ML_Library-->>-Flask_API: Trả về trạng thái (true/false)
+    Flask_API-->>-Client: Response {"status": "healthy", "model_trained": true/false}
+    end
+
+    %% Training Flow
+    rect rgb(200, 255, 200)
+    note over Client, MLflow: Training Flow
+    Client->>+Flask_API: POST /train (với dữ liệu training)
+    Flask_API->>Flask_API: Xác thực dữ liệu đầu vào
+    Flask_API->>+ML_Library: Gọi model.train(X, y)
+    ML_Library->>+Scikit_learn: Chia dữ liệu train_test_split()
+    Scikit_learn-->>-ML_Library: Trả về train/test sets
+    ML_Library->>+Scikit_learn: Chuẩn hóa dữ liệu với StandardScaler
+    Scikit_learn-->>-ML_Library: Trả về dữ liệu đã chuẩn hóa
+    ML_Library->>+Scikit_learn: Huấn luyện RandomForestClassifier
+    Scikit_learn-->>-ML_Library: Trả về model đã huấn luyện
+    ML_Library->>+Scikit_learn: Tính toán metrics (accuracy, precision, recall, f1)
+    Scikit_learn-->>-ML_Library: Trả về metrics
+    ML_Library->>+MLflow: Ghi nhận metrics và parameters
+    MLflow-->>-ML_Library: Xác nhận đã ghi nhận
+    ML_Library-->>-Flask_API: Trả về metrics
+    Flask_API-->>-Client: Response {"message": "Model trained successfully", "metrics": {...}}
+    end
+
+    %% Prediction Flow
+    rect rgb(255, 220, 220)
+    note over Client, MLflow: Prediction Flow
+    Client->>+Flask_API: POST /predict (với dữ liệu dự đoán)
+    Flask_API->>Flask_API: Xác thực dữ liệu đầu vào
+    Flask_API->>+ML_Library: Gọi model.predict(X)
+    ML_Library->>ML_Library: Kiểm tra model đã huấn luyện
+    ML_Library->>+Scikit_learn: Chuẩn hóa dữ liệu đầu vào
+    Scikit_learn-->>-ML_Library: Trả về dữ liệu đã chuẩn hóa
+    ML_Library->>+Scikit_learn: Dự đoán với model
+    Scikit_learn-->>-ML_Library: Trả về kết quả dự đoán
+    ML_Library->>+Scikit_learn: Tính toán xác suất dự đoán
+    Scikit_learn-->>-ML_Library: Trả về xác suất
+    ML_Library-->>-Flask_API: Trả về kết quả và xác suất
+    Flask_API-->>-Client: Response {"predictions": [...], "probabilities": [...]}
+    end
+
+    %% Get Metrics Flow
+    rect rgb(255, 255, 200)
+    note over Client, MLflow: Get Metrics Flow
+    Client->>+Flask_API: GET /metrics
+    Flask_API->>+ML_Library: Gọi model.get_metrics()
+    ML_Library-->>-Flask_API: Trả về metrics hiện tại
+    Flask_API-->>-Client: Response {"accuracy": x, "precision": y, "recall": z, "f1": w}
+    end
+
+    %% MLflow UI Access
+    rect rgb(220, 220, 255)
+    note over Client, MLflow: MLflow UI Access
+    Client->>+MLflow: Truy cập MLflow UI (http://localhost:5002)
+    MLflow-->>-Client: Hiển thị dashboard với experiments và metrics
+    end 
