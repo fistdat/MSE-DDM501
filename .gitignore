@@ -6,3 +6,7 @@ mlruns/
 .coverage
 htmlcov/
 tuning_results/
+mlartifacts/
+*.joblib
+models/
+best_model.joblib
