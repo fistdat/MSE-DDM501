@@ -4,11 +4,23 @@ sequenceDiagram
     participant Flask_API as Flask API (app.py)
     participant ML_Library as ML Library (mlib.py)
     participant Scikit_learn as Scikit-learn
+    participant MLflow_Utils as MLflow Utilities (mlflow_utils.py)
     participant MLflow
+    participant Tuning as Hyperparameter Tuning (simple_hyperparam_tuning.py)
+
+    %% MLflow Server Management Flow
+    rect rgb(230, 230, 255)
+    note over Client, Tuning: MLflow Server Management Flow
+    MLflow_Utils->>MLflow_Utils: Kiểm tra MLflow server đã chạy
+    MLflow_Utils->>MLflow_Utils: is_port_available(5002)
+    MLflow_Utils->>MLflow_Utils: ensure_artifact_dir()
+    MLflow_Utils->>+MLflow: Khởi động MLflow server
+    MLflow-->>-MLflow_Utils: Server khởi động thành công
+    end
 
     %% Health Check Flow
     rect rgb(191, 223, 255)
-    note over Client, MLflow: Health Check Flow
+    note over Client, Tuning: Health Check Flow
     Client->>+Flask_API: GET /health
     Flask_API->>+ML_Library: Kiểm tra model.is_trained
     ML_Library-->>-Flask_API: Trả về trạng thái (true/false)
@@ -17,7 +29,7 @@ sequenceDiagram
 
     %% Training Flow
     rect rgb(200, 255, 200)
-    note over Client, MLflow: Training Flow
+    note over Client, Tuning: Training Flow
     Client->>+Flask_API: POST /train (với dữ liệu training)
     Flask_API->>Flask_API: Xác thực dữ liệu đầu vào
     Flask_API->>+ML_Library: Gọi model.train(X, y)
@@ -29,6 +41,10 @@ sequenceDiagram
     Scikit_learn-->>-ML_Library: Trả về model đã huấn luyện
     ML_Library->>+Scikit_learn: Tính toán metrics (accuracy, precision, recall, f1)
     Scikit_learn-->>-ML_Library: Trả về metrics
+    ML_Library->>+MLflow_Utils: Kiểm tra và thiết lập MLflow tracking
+    MLflow_Utils->>+MLflow: Thiết lập tracking URI và experiment
+    MLflow-->>-MLflow_Utils: Tracking đã thiết lập
+    MLflow_Utils-->>-ML_Library: Tracking sẵn sàng
     ML_Library->>+MLflow: Ghi nhận metrics và parameters
     MLflow-->>-ML_Library: Xác nhận đã ghi nhận
     ML_Library-->>-Flask_API: Trả về metrics
@@ -37,7 +53,7 @@ sequenceDiagram
 
     %% Prediction Flow
     rect rgb(255, 220, 220)
-    note over Client, MLflow: Prediction Flow
+    note over Client, Tuning: Prediction Flow
     Client->>+Flask_API: POST /predict (với dữ liệu dự đoán)
     Flask_API->>Flask_API: Xác thực dữ liệu đầu vào
     Flask_API->>+ML_Library: Gọi model.predict(X)
@@ -54,16 +70,34 @@ sequenceDiagram
 
     %% Get Metrics Flow
     rect rgb(255, 255, 200)
-    note over Client, MLflow: Get Metrics Flow
+    note over Client, Tuning: Get Metrics Flow
     Client->>+Flask_API: GET /metrics
     Flask_API->>+ML_Library: Gọi model.get_metrics()
     ML_Library-->>-Flask_API: Trả về metrics hiện tại
     Flask_API-->>-Client: Response {"accuracy": x, "precision": y, "recall": z, "f1": w}
     end
 
+    %% Hyperparameter Tuning Flow
+    rect rgb(255, 200, 255)
+    note over Client, Tuning: Hyperparameter Tuning Flow
+    Client->>+Tuning: Chạy script simple_hyperparam_tuning.py
+    Tuning->>Tuning: Tạo dữ liệu với generate_data()
+    Tuning->>+MLflow_Utils: setup_mlflow tracking
+    MLflow_Utils->>+MLflow: Thiết lập experiment
+    MLflow-->>-MLflow_Utils: Experiment đã thiết lập
+    MLflow_Utils-->>-Tuning: Tracking sẵn sàng
+    Tuning->>Tuning: Tạo pipeline và param_grid
+    Tuning->>+Scikit_learn: GridSearchCV
+    Scikit_learn->>Scikit_learn: Cross-validation và đánh giá
+    Scikit_learn-->>-Tuning: Trả về best model và parameters
+    Tuning->>+MLflow: Ghi nhận best model và metrics
+    MLflow-->>-Tuning: Đã lưu trữ thông tin
+    Tuning-->>-Client: Kết quả tuning và best parameters
+    end
+
     %% MLflow UI Access
     rect rgb(220, 220, 255)
-    note over Client, MLflow: MLflow UI Access
+    note over Client, Tuning: MLflow UI Access
     Client->>+MLflow: Truy cập MLflow UI (http://localhost:5002)
     MLflow-->>-Client: Hiển thị dashboard với experiments và metrics
     end 
