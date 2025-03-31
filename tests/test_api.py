@@ -68,9 +68,11 @@ def test_train_endpoint_invalid_data(client):
 def test_predict_endpoint_not_trained(client):
     """Kiểm tra endpoint predict khi chưa huấn luyện model"""
     # Tạo một model mới chưa được huấn luyện
-    model = MLModel()
-    model.is_trained = False
-    with patch.object(app, 'model', model):
+    mock_model = MagicMock(spec=MLModel)
+    mock_model.is_trained = False
+    mock_model.predict.side_effect = Exception("Model not trained")
+    
+    with patch('app.model', mock_model):
         payload = {
             'data': [[1, 2], [3, 4]]
         }
@@ -83,12 +85,12 @@ def test_predict_endpoint_not_trained(client):
 def test_predict_endpoint_trained(client):
     """Kiểm tra endpoint predict sau khi đã huấn luyện model"""
     # Tạo một model đã được huấn luyện
-    model = MLModel()
-    model.is_trained = True
-    with patch.object(app, 'model', model), \
-         patch.object(model, 'predict', return_value=np.array([0, 1])), \
-         patch.object(model, 'predict_proba', return_value=np.array([[0.8, 0.2], [0.3, 0.7]])):
-        
+    mock_model = MagicMock(spec=MLModel)
+    mock_model.is_trained = True
+    mock_model.predict.return_value = np.array([0, 1])
+    mock_model.predict_proba.return_value = np.array([[0.8, 0.2], [0.3, 0.7]])
+    
+    with patch('app.model', mock_model):
         # Test predict
         predict_payload = {
             'data': [[2, 3], [6, 7]]
@@ -105,11 +107,11 @@ def test_predict_endpoint_trained(client):
 def test_metrics_endpoint_not_trained(client):
     """Kiểm tra endpoint metrics khi chưa huấn luyện model"""
     # Tạo một model mới chưa được huấn luyện
-    model = MLModel()
-    model.is_trained = False
-    with patch.object(app, 'model', model), \
-         patch.object(model, 'get_metrics', return_value={}):
-        
+    mock_model = MagicMock(spec=MLModel)
+    mock_model.is_trained = False
+    mock_model.get_metrics.return_value = {}
+    
+    with patch('app.model', mock_model):
         response = client.get('/metrics')
         assert response.status_code == 404
         data = json.loads(response.data)
@@ -119,17 +121,17 @@ def test_metrics_endpoint_not_trained(client):
 def test_metrics_endpoint_trained(client):
     """Kiểm tra endpoint metrics sau khi đã huấn luyện model"""
     # Tạo một model đã được huấn luyện với metrics
-    model = MLModel()
-    model.is_trained = True
+    mock_model = MagicMock(spec=MLModel)
+    mock_model.is_trained = True
     metrics = {
         'accuracy': 0.95,
         'precision': 0.9,
         'recall': 0.89,
         'f1': 0.88
     }
-    with patch.object(app, 'model', model), \
-         patch.object(model, 'get_metrics', return_value=metrics):
-        
+    mock_model.get_metrics.return_value = metrics
+    
+    with patch('app.model', mock_model):
         response = client.get('/metrics')
         assert response.status_code == 200
         data = json.loads(response.data)
