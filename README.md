@@ -9,6 +9,9 @@ MLOps-Lab02/
 ├── app.py                       # Flask API
 ├── mlib.py                      # Thư viện ML
 ├── simple_hyperparam_tuning.py  # Script tuning siêu tham số đơn giản
+├── save_best_model.py           # Script lưu mô hình tốt nhất từ kết quả tuning
+├── models/                      # Thư mục chứa mô hình đã lưu
+├── mlflow_data/                 # Dữ liệu MLflow
 ├── requirements.txt             # Dependencies
 ├── Dockerfile                   # Container configuration
 └── Makefile                     # Build và utility commands
@@ -41,12 +44,21 @@ make install
 
 1. Khởi động MLflow server:
 ```bash
-make mlflow
+make start-mlflow
 ```
 
 2. Chạy ứng dụng Flask:
 ```bash
 python app.py
+```
+
+Hoặc sử dụng mô hình tốt nhất đã được lưu:
+```bash
+# Lưu mô hình tốt nhất từ kết quả tuning trước
+make save-best-model
+
+# Chạy ứng dụng với mô hình tốt nhất
+python app.py --use-best-model
 ```
 
 Hoặc sử dụng Docker:
@@ -87,10 +99,10 @@ Script `simple_hyperparam_tuning.py` cung cấp giải pháp tuning đơn giản
 
 ```bash
 # Khởi động MLflow Server
-make mlflow
+make start-mlflow
 
-# Dừng MLflow Server
-make stop-mlflow
+# Khởi động lại MLflow (xóa dữ liệu cũ và khởi động lại)
+make reset-mlflow
 ```
 
 ### 2. Thực hiện Tuning
@@ -145,6 +157,42 @@ Tất cả kết quả tuning đều được lưu tự động trong thư mục
 # Xóa dữ liệu MLflow và kết quả tuning
 make clean-mlflow
 ```
+
+## Lưu và Quản lý Mô hình Tốt nhất
+
+Sau khi thực hiện tuning, bạn có thể lưu mô hình tốt nhất vào Model Registry của MLflow và ổ đĩa cục bộ bằng cách sử dụng:
+
+```bash
+# Lưu mô hình tốt nhất từ kết quả tuning
+make save-best-model
+```
+
+Script `save_best_model.py` sẽ:
+1. Tìm kiếm trong MLflow experiment `tuning_experiment` để xác định run có F1-score cao nhất
+2. Đăng ký mô hình này vào MLflow Model Registry
+3. Lưu mô hình vào thư mục `models/` dưới dạng file joblib
+4. Lưu thông tin chi tiết về mô hình tốt nhất vào `models/best_model_info.json`
+
+Thông tin mô hình bao gồm:
+- Run ID
+- Loại mô hình (random_forest, gradient_boosting, v.v.)
+- Các metrics (F1-score, accuracy, precision, recall)
+- Các siêu tham số tối ưu
+- Thông tin về phiên bản mô hình trong Model Registry
+
+Để kiểm tra chức năng này, bạn có thể chạy:
+
+```bash
+# Chạy unit test cho save_best_model.py
+make test-save-model
+```
+
+Các unit test sẽ kiểm tra:
+- Tìm và lưu mô hình thành công
+- Xử lý trường hợp không tìm thấy experiment
+- Xử lý trường hợp không có runs nào
+- Xử lý trường hợp thiếu metrics
+- Đăng ký mô hình vào Model Registry
 
 ## Development
 

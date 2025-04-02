@@ -21,6 +21,7 @@ import argparse
 import time
 import logging
 from datetime import datetime
+from mlflow_config import setup_mlflow as init_mlflow, DEFAULT_EXPERIMENT_NAME
 
 # Cấu hình logging
 logging.basicConfig(
@@ -70,38 +71,24 @@ PARAM_SPACES = {
     }
 }
 
-def setup_mlflow(experiment_name="tuning_experiment"):
+def setup_mlflow():
     """
     Thiết lập MLflow tracking
     
-    Parameters:
-        experiment_name (str): Tên cho MLflow experiment
-    
     Returns:
-        bool: True nếu thiết lập thành công, False nếu thất bại
+        bool: True nếu thành công, False nếu không
     """
     try:
-        # Thiết lập MLflow tracking URI
-        mlflow_uri = "http://localhost:5002"
-        mlflow.set_tracking_uri(mlflow_uri)
-        
-        # Kiểm tra xem experiment đã tồn tại chưa
-        experiment = mlflow.get_experiment_by_name(experiment_name)
-        
-        if experiment is None:
-            # Tạo experiment mới nếu chưa tồn tại
-            experiment_id = mlflow.create_experiment(experiment_name)
-            logger.info(f"Đã tạo experiment mới '{experiment_name}' với ID: {experiment_id}")
+        # Sử dụng cấu hình từ mlflow_config
+        if init_mlflow():
+            mlflow.set_experiment(DEFAULT_EXPERIMENT_NAME)
+            logger.info(f"Đã thiết lập MLflow tracking với experiment: {DEFAULT_EXPERIMENT_NAME}")
+            return True
         else:
-            experiment_id = experiment.experiment_id
-            logger.info(f"Sử dụng experiment đã tồn tại '{experiment_name}' với ID: {experiment_id}")
-        
-        # Thiết lập experiment hiện tại
-        mlflow.set_experiment(experiment_name)
-        return True
-    
+            logger.warning("Không thể thiết lập MLflow, sẽ chạy mà không có tracking")
+            return False
     except Exception as e:
-        logger.error(f"Lỗi khi thiết lập MLflow: {e}")
+        logger.warning(f"Lỗi khi thiết lập MLflow: {str(e)}")
         return False
 
 def generate_data(n_samples=1000, n_features=20, test_size=0.2, random_state=42):
