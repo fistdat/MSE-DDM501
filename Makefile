@@ -1,7 +1,7 @@
-.PHONY: install test lint format clean docker-build docker-run venv dev check clean-mlflow simple-tuning simple-tuning-tiny simple-tuning-gb simple-tuning-large save-best-model test-save-model reset-mlflow start-mlflow
+.PHONY: install test lint format clean docker-build docker-run venv dev check clean-mlflow clean-all simple-tuning simple-tuning-tiny simple-tuning-gb simple-tuning-large save-best-model test-save-model reset-mlflow start-mlflow test-predict
 
 # Python version
-PYTHON = python3.12
+PYTHON = python3
 
 # ===== CÀI ĐẶT & MÔI TRƯỜNG =====
 
@@ -13,7 +13,7 @@ install:
 # Create virtual environment
 venv:
 	$(PYTHON) -m venv venv
-	. venv/bin/activate && pip install -r requirements.txt
+	@echo "Môi trường ảo đã được tạo. Kích hoạt bằng 'source venv/bin/activate' (Linux/Mac) hoặc 'venv\\Scripts\\activate' (Windows)"
 
 # Development setup
 dev: venv
@@ -23,11 +23,15 @@ dev: venv
 
 # Run tests with coverage
 test:
-	pytest --cov=. --cov-report=html
+	cd tests && python run_tests.py
+
+# Run integration tests
+test-integration:
+	cd tests && python test_integration.py
 
 # Run linting
 lint:
-	pylint *.py
+	pylint *.py tuning_scripts/*.py mlflow_scripts/*.py tests/*.py
 	black --check .
 
 # Format code
@@ -39,58 +43,85 @@ check: lint test
 
 # ===== DOCKER =====
 
-# Docker commands
+# Build Docker image
 docker-build:
-	docker build -t mlops-lab02 .
+	docker build -t mlops-final-project .
 
+# Run Docker container
 docker-run:
-	docker run -p 5001:5001 mlops-lab02
+	docker run -p 5001:5001 -p 5002:5002 mlops-final-project
 
 # ===== TUNING SIÊU THAM SỐ =====
 
 # Simple Hyperparameter Tuning
 simple-tuning:
-	python simple_hyperparam_tuning.py
+	python tuning_scripts/simple_hyperparam_tuning.py
 
+# Tuning với không gian tham số nhỏ (nhanh)
 simple-tuning-tiny:
-	python simple_hyperparam_tuning.py --space tiny
+	python tuning_scripts/simple_hyperparam_tuning.py --space tiny
 
+# Tuning với Gradient Boosting
 simple-tuning-gb:
-	python simple_hyperparam_tuning.py --model gradient_boosting
+	python tuning_scripts/simple_hyperparam_tuning.py --model gradient_boosting
 
+# Tuning với nhiều dữ liệu hơn
 simple-tuning-large:
-	python simple_hyperparam_tuning.py --samples 2000 --features 30
+	python tuning_scripts/simple_hyperparam_tuning.py --samples 2000 --features 30
+
+# Custom Hyperparameter Tuning - Tuning tùy chỉnh
+custom-tuning:
+	python tuning_scripts/custom_hyperparam_tuning.py
 
 # ===== LƯU & QUẢN LÝ MÔ HÌNH =====
 
 # Save best model from tuning results
 save-best-model:
-	python save_best_model.py
+	python tuning_scripts/save_best_model.py
 
 # Test save best model functionality
 test-save-model:
-	python test_save_best_model.py
+	python -m unittest tuning_scripts.test_save_best_model
+
+# Test predict functionality with sample data
+test-predict:
+	python -c "import json, requests; print(requests.post('http://localhost:5001/predict', data={'feature_data': json.dumps([{f'feature_{i}': float(i) for i in range(20)}])}).json())"
 
 # ===== MLFLOW =====
 
 # Khởi động lại MLflow hoàn toàn (xóa dữ liệu cũ và khởi động lại)
 reset-mlflow:
-	./restart_mlflow.sh
+	cd mlflow_scripts && ./restart_mlflow.sh
 
 # Khởi động MLflow server
 start-mlflow:
-	python run_mlflow_server.py --host 127.0.0.1 --port 5002 \
+	python mlflow_scripts/run_mlflow_server.py --host 127.0.0.1 --port 5002 \
 		--backend-store-uri "./mlflow_data/mlflow.db" \
 		--default-artifact-root "./mlflow_data/artifacts"
 
-# Clean MLflow artifacts
-clean-mlflow:
-	rm -rf mlruns
-	rm -rf tuning_results
+# Khôi phục experiments từ backup
+restore-experiments:
+	python mlflow_scripts/restore_experiments.py
+
+# ===== RUN APPLICATION =====
+
+# Chạy ứng dụng Flask
+run-app:
+	python app.py
+
+# Chạy ứng dụng với mô hình tốt nhất
+run-app-best-model:
+	python app.py --use-best-model
 
 # ===== DỌN DẸP =====
 
-# Clean up
+# Clean MLflow artifacts and tuning results
+clean-mlflow:
+	rm -rf mlruns mlflow_data/mlflow.db
+	rm -rf mlartifacts
+	rm -rf tuning_results/*.json
+
+# Clean up Python artifacts
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
@@ -102,3 +133,8 @@ clean:
 	find . -type d -name ".pytest_cache" -exec rm -rf {} +
 	find . -type d -name ".coverage" -exec rm -rf {} +
 	find . -type d -name "htmlcov" -exec rm -rf {} +
+
+# Clean everything (except venv)
+clean-all: clean clean-mlflow
+	rm -f .DS_Store
+	rm -f models/*.joblib

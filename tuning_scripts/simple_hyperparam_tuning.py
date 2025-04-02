@@ -21,7 +21,11 @@ import argparse
 import time
 import logging
 from datetime import datetime
-from mlflow_config import setup_mlflow as init_mlflow, DEFAULT_EXPERIMENT_NAME
+import sys
+
+# Thêm thư mục gốc vào path để import các module
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from mlflow_scripts.mlflow_config import setup_mlflow as init_mlflow, DEFAULT_EXPERIMENT_NAME
 
 # Cấu hình logging
 logging.basicConfig(

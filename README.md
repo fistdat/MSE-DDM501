@@ -1,26 +1,47 @@
-# MLOps Lab 02
+# MLOps Final Project - Hyperparameter Tuning
 
-Dự án MLOps với Flask API và MLflow để quản lý vòng đời của model machine learning.
+Dự án MLOps với Flask API, MLflow và Hyperparameter Tuning để quản lý vòng đời của model machine learning.
 
 ## Cấu trúc dự án
 
 ```
-MLOps-Lab02/
-├── app.py                       # Flask API
-├── mlib.py                      # Thư viện ML
-├── simple_hyperparam_tuning.py  # Script tuning siêu tham số đơn giản
-├── save_best_model.py           # Script lưu mô hình tốt nhất từ kết quả tuning
-├── models/                      # Thư mục chứa mô hình đã lưu
-├── mlflow_data/                 # Dữ liệu MLflow
-├── requirements.txt             # Dependencies
-├── Dockerfile                   # Container configuration
-└── Makefile                     # Build và utility commands
+MLOps-Final-Project/
+├── app.py                         # Flask API chính
+├── mlib.py                        # Thư viện ML core
+├── tuning_scripts/                # Thư mục chứa các script tuning
+│   ├── simple_hyperparam_tuning.py    # Script tuning siêu tham số đơn giản
+│   ├── custom_hyperparam_tuning.py    # Script tuning siêu tham số tùy chỉnh
+│   ├── save_best_model.py             # Script lưu mô hình tốt nhất từ kết quả tuning
+│   └── test_save_best_model.py        # Test script cho save_best_model
+├── mlflow_scripts/                # Thư mục chứa các script MLflow
+│   ├── mlflow_utils.py                # Tiện ích làm việc với MLflow
+│   ├── mlflow_config.py               # Cấu hình MLflow
+│   ├── run_mlflow_server.py           # Script khởi động MLflow server
+│   ├── restart_mlflow.sh              # Script khởi động lại MLflow server
+│   ├── reset_mlflow.py                # Reset và xóa dữ liệu MLflow
+│   └── restore_experiments.py         # Khôi phục experiments từ backup
+├── models/                        # Thư mục chứa mô hình đã lưu
+│   └── best_model.joblib          # Mô hình tốt nhất đã lưu
+├── templates/                     # Templates HTML cho Flask UI
+│   ├── index.html                 # Trang chủ ứng dụng
+│   └── result_detail.html         # Trang chi tiết kết quả tuning
+├── tuning_results/                # Thư mục chứa kết quả tuning
+├── tests/                         # Unit tests và Integration tests
+│   ├── test_app_frontend.py           # Test cho giao diện người dùng
+│   ├── test_error_fix.py              # Test xử lý lỗi
+│   ├── test_integration.py            # Integration tests
+│   ├── test_template_validation.py    # Validation tests cho templates
+│   └── run_tests.py                   # Script chạy tất cả tests
+├── mlflow_data/                   # Dữ liệu MLflow 
+├── requirements.txt               # Các thư viện cần thiết
+├── Dockerfile                     # Cấu hình container
+└── Makefile                       # Các lệnh build và utility
 ```
 
 ## Yêu cầu hệ thống
 
-- Python 3.12
-- Docker (tùy chọn)
+- Python 3.9+
+- Thư viện: flask, scikit-learn, pandas, numpy, joblib, mlflow, matplotlib
 
 ## Cài đặt
 
@@ -52,16 +73,10 @@ make start-mlflow
 python app.py
 ```
 
-Hoặc sử dụng mô hình tốt nhất đã được lưu:
-```bash
-# Lưu mô hình tốt nhất từ kết quả tuning trước
-make save-best-model
+Mở trình duyệt và truy cập: http://localhost:5001
 
-# Chạy ứng dụng với mô hình tốt nhất
-python app.py --use-best-model
-```
+### Sử dụng Docker
 
-Hoặc sử dụng Docker:
 ```bash
 make docker-build
 make docker-run
@@ -91,11 +106,31 @@ make docker-run
 - Method: GET
 - Response: Metrics hiện tại của model
 
+## Giao diện người dùng
+
+Ứng dụng cung cấp giao diện người dùng web để:
+
+1. **Chạy Tuning Đơn Giản**:
+   - Lựa chọn loại mô hình (Random Forest, Gradient Boosting)
+   - Chọn không gian tham số (Tiny, Small, Medium)
+   - Chỉ định số lượng mẫu, features và folds
+
+2. **Chạy Tuning Tùy chỉnh**:
+   - Tùy chọn chi tiết các siêu tham số cho từng loại mô hình
+   - Điều chỉnh quy mô và cấu hình thử nghiệm
+
+3. **Xem kết quả trong MLflow**:
+   - Trực tiếp xem báo cáo và phân tích trong MLflow UI
+   - So sánh kết quả giữa các thử nghiệm
+
+4. **Phân Loại với Mô Hình Tốt Nhất**:
+   - Sử dụng mô hình đã được huấn luyện tốt nhất để phân loại dữ liệu mới
+   - Tạo dữ liệu ngẫu nhiên để thử nghiệm nhanh
+   - Xem kết quả phân loại và xác suất chi tiết
+
 ## Tuning Siêu Tham Số
 
-Script `simple_hyperparam_tuning.py` cung cấp giải pháp tuning đơn giản, dễ sử dụng và hiệu quả với nhiều tùy chọn linh hoạt.
-
-### 1. Khởi động MLflow Server
+### Khởi động MLflow Server
 
 ```bash
 # Khởi động MLflow Server
@@ -105,20 +140,20 @@ make start-mlflow
 make reset-mlflow
 ```
 
-### 2. Thực hiện Tuning
+### Thực hiện Tuning từ Command Line
 
 ```bash
-# Chạy với tùy chọn mặc định (RandomForest, không gian small)
+# Tuning đơn giản với tùy chọn mặc định (Random Forest, không gian small)
 python simple_hyperparam_tuning.py
 # hoặc
 make simple-tuning
 
-# Tuning với không gian tham số nhỏ hơn (nhanh hơn)
+# Tuning với không gian tham số nhỏ (nhanh hơn)
 python simple_hyperparam_tuning.py --space tiny
 # hoặc
 make simple-tuning-tiny
 
-# Tuning với GradientBoosting
+# Tuning với Gradient Boosting
 python simple_hyperparam_tuning.py --model gradient_boosting
 # hoặc
 make simple-tuning-gb
@@ -127,9 +162,12 @@ make simple-tuning-gb
 python simple_hyperparam_tuning.py --samples 2000 --features 30
 # hoặc
 make simple-tuning-large
+
+# Tuning tùy chỉnh với file tham số 
+python custom_hyperparam_tuning.py --model random_forest --params-file my_params.json
 ```
 
-Các tùy chọn có sẵn:
+Các tùy chọn có sẵn cho simple_hyperparam_tuning.py:
 - `--model`: Loại mô hình (`random_forest`, `gradient_boosting`)
 - `--space`: Kích thước không gian tham số (`tiny`, `small`, `medium`)
 - `--samples`: Số lượng mẫu dữ liệu
@@ -137,11 +175,7 @@ Các tùy chọn có sẵn:
 - `--cv`: Số fold cross-validation
 - `--no-mlflow`: Không sử dụng MLflow tracking
 
-Tất cả kết quả tuning được lưu trong:
-1. MLflow UI: http://localhost:5002
-2. Thư mục `tuning_results/` dưới dạng file JSON
-
-### 3. Xem Kết Quả
+### Xem Kết Quả
 
 #### MLflow UI
 
@@ -151,16 +185,9 @@ Truy cập: http://localhost:5002
 
 Tất cả kết quả tuning đều được lưu tự động trong thư mục `tuning_results/`.
 
-### 4. Dọn Dẹp Dữ Liệu
-
-```bash
-# Xóa dữ liệu MLflow và kết quả tuning
-make clean-mlflow
-```
-
 ## Lưu và Quản lý Mô hình Tốt nhất
 
-Sau khi thực hiện tuning, bạn có thể lưu mô hình tốt nhất vào Model Registry của MLflow và ổ đĩa cục bộ bằng cách sử dụng:
+Sau khi thực hiện tuning, bạn có thể lưu mô hình tốt nhất vào Model Registry của MLflow và ổ đĩa cục bộ:
 
 ```bash
 # Lưu mô hình tốt nhất từ kết quả tuning
@@ -171,34 +198,35 @@ Script `save_best_model.py` sẽ:
 1. Tìm kiếm trong MLflow experiment `tuning_experiment` để xác định run có F1-score cao nhất
 2. Đăng ký mô hình này vào MLflow Model Registry
 3. Lưu mô hình vào thư mục `models/` dưới dạng file joblib
-4. Lưu thông tin chi tiết về mô hình tốt nhất vào `models/best_model_info.json`
+4. Lưu thông tin chi tiết về mô hình tốt nhất vào file `model_info.json`
 
-Thông tin mô hình bao gồm:
-- Run ID
-- Loại mô hình (random_forest, gradient_boosting, v.v.)
-- Các metrics (F1-score, accuracy, precision, recall)
-- Các siêu tham số tối ưu
-- Thông tin về phiên bản mô hình trong Model Registry
+## Phân Loại Dữ Liệu với Mô Hình Tốt Nhất
 
-Để kiểm tra chức năng này, bạn có thể chạy:
+Sau khi lưu mô hình tốt nhất, bạn có thể sử dụng mô hình này để phân loại dữ liệu mới:
 
-```bash
-# Chạy unit test cho save_best_model.py
-make test-save-model
-```
+1. **Thông qua giao diện web**:
+   - Truy cập tab "Phân Loại" trên giao diện người dùng
+   - Nhập dữ liệu đầu vào dưới dạng JSON hoặc sử dụng nút "Tạo Dữ Liệu Ngẫu Nhiên"
+   - Nhấn "Phân Loại" để xem kết quả
 
-Các unit test sẽ kiểm tra:
-- Tìm và lưu mô hình thành công
-- Xử lý trường hợp không tìm thấy experiment
-- Xử lý trường hợp không có runs nào
-- Xử lý trường hợp thiếu metrics
-- Đăng ký mô hình vào Model Registry
+2. **Thông qua API**:
+   ```bash
+   curl -X POST http://localhost:5001/predict \
+     -d "feature_data=[{\"feature_1\": 0.5, \"feature_2\": 0.3, ...}]"
+   ```
+
+3. **Sử dụng lệnh test**:
+   ```bash
+   make test-predict
+   ```
+
+Kết quả phân loại bao gồm:
+- Lớp được dự đoán (0 hoặc 1)
+- Xác suất của dự đoán
+- Thông tin chi tiết về các đặc trưng đầu vào
+- Biểu đồ xác suất cho từng lớp
 
 ## Development
-
-### Code Style
-- Sử dụng Black cho code formatting
-- Sử dụng Pylint cho linting
 
 ### Testing
 ```bash
@@ -215,12 +243,24 @@ make lint
 make format
 ```
 
-## MLflow
+### Clean Up
+```bash
+make clean  # Dọn dẹp cache, __pycache__, v.v.
+make clean-mlflow  # Xóa dữ liệu MLflow và kết quả tuning
+```
 
-MLflow được cấu hình để theo dõi:
-- Metrics (accuracy, precision, recall, f1)
-- Model parameters
-- Model artifacts
+## MLflow Integration
+
+MLflow được tích hợp chặt chẽ vào dự án để:
+- Theo dõi thử nghiệm (Experiment Tracking)
+- Quản lý mô hình (Model Registry)
+- Lưu trữ artifacts
+- So sánh kết quả thử nghiệm
+
+Mỗi lần chạy tuning, kết quả sẽ được:
+1. Tự động lưu vào MLflow Tracking Server
+2. Lưu trữ dưới dạng JSON trong thư mục `tuning_results/`
+3. Hiển thị trên giao diện web của ứng dụng
 
 MLflow UI có thể truy cập tại: http://localhost:5002
 

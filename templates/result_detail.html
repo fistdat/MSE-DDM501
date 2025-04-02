@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi Tiết Kết Quả Tuning - MLOps Final Project</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .badge {
+            font-weight: 500;
+            padding: 0.5em 0.75em;
+        }
+        .redirect-card {
+            margin-top: 40px;
+            padding: 40px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+        }
+        .redirect-card h2 {
+            margin-bottom: 20px;
+            color: #343a40;
+        }
+        .redirect-card p {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            color: #6c757d;
+        }
+        .mlflow-btn {
+            padding: 12px 30px;
+            font-size: 1.2rem;
+        }
+        .model-info {
+            display: inline-block;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="d-flex align-items-center pb-3 mb-4 border-bottom">
+            <a href="/" class="d-flex align-items-center text-dark text-decoration-none me-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                </svg>
+            </a>
+            <h1 class="display-6 fw-bold">MLOps Final Project - Chi Tiết Kết Quả Tuning</h1>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- MLflow Redirect Card -->
+        <div class="redirect-card">
+            <div class="mb-4">
+                {% if 'random_forest' in result.model_type %}
+                    <span class="badge bg-success model-info fs-5">{{ result.model_type|capitalize }}</span>
+                {% elif 'gradient_boosting' in result.model_type %}
+                    <span class="badge bg-info model-info fs-5">{{ result.model_type|capitalize }}</span>
+                {% else %}
+                    <span class="badge bg-secondary model-info fs-5">{{ result.model_type|capitalize }}</span>
+                {% endif %}
+                <span class="badge bg-primary model-info fs-5">{{ result.param_space }}</span>
+                <p class="text-muted mt-2">{{ result.timestamp }}</p>
+            </div>
+            
+            <h2>Kết quả chi tiết có sẵn trong MLflow</h2>
+            <p>Để xem tất cả kết quả tuning, metrics và tham số chi tiết, vui lòng truy cập MLflow UI</p>
+            
+            {% if result.experiment_id %}
+                <a href="http://localhost:5002/#/experiments/{{ result.experiment_id }}" 
+                   target="_blank" 
+                   class="btn btn-primary mlflow-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-bar-chart-line me-2" viewBox="0 0 16 16">
+                        <path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h1V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7h1V2zm1 12h2V2h-2v12zm-3 0V7H7v7h2zm-5 0v-3H2v3h2z"/>
+                    </svg>
+                    Xem trên MLflow (Experiment ID: {{ result.experiment_id }})
+                </a>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Không tìm thấy Experiment ID. Không thể liên kết đến MLflow.
+                </div>
+                <a href="http://localhost:5002" 
+                   target="_blank" 
+                   class="btn btn-outline-primary mlflow-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-arrow-up-right me-2" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
+                        <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
+                    </svg>
+                    Mở MLflow UI
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

@@ -9,7 +9,9 @@ import time
 import requests
 import sys
 import logging
-from mlflow_config import (
+
+# Sử dụng import tương đối trong cùng package
+from .mlflow_config import (
     TRACKING_URI, 
     ARTIFACTS_PATH, 
     MLFLOW_PORT, 

@@ -30,13 +30,16 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Di chuyển lên thư mục gốc
+cd ..
+
 # Xóa thư mục MLflow data cũ
 echo -e "Xóa dữ liệu MLflow cũ..."
 rm -rf mlruns mlflow_data
 
 # Khởi tạo MLflow mới
 echo -e "Khởi tạo MLflow mới..."
-if python mlflow_config.py; then
+if python -m mlflow_scripts.mlflow_config; then
     echo -e "${GREEN}Khởi tạo MLflow thành công!${NC}"
 else  
     echo -e "${RED}Lỗi khi khởi tạo MLflow!${NC}"
@@ -57,6 +60,6 @@ echo "MLflow đang chạy tại: http://localhost:5002"
 echo "Nhấn Ctrl+C để dừng"
 
 # Sử dụng script mới để khởi động MLflow server
-python run_mlflow_server.py --host 127.0.0.1 --port 5002 \
+python -m mlflow_scripts.run_mlflow_server --host 127.0.0.1 --port 5002 \
     --backend-store-uri "./mlflow_data/mlflow.db" \
     --default-artifact-root "./mlflow_data/artifacts" 
