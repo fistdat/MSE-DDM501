@@ -1,0 +1,60 @@
+/* Custom styles for MLOps application */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.mlops-header {
+    margin-bottom: 2rem;
+}
+
+.tuning-form {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.result-card {
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+
+.result-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    border-color: #adb5bd;
+}
+
+.metric-box {
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    background-color: #e9ecef;
+}
+
+.mlflow-link {
+    display: inline-block;
+    margin-top: 1rem;
+}
+
+.experiment-info {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    border-left: 5px solid #0d6efd;
+}
+
+/* Style for mobile devices */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .tuning-form {
+        padding: 15px;
+    }
+} 

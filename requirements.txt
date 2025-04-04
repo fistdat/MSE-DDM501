@@ -4,6 +4,7 @@ matplotlib>=3.4.0
 scikit-learn>=1.0.0
 joblib>=1.1.0
 
+# MLflow giới hạn không dùng pyarrow
 mlflow>=2.0.0,<2.8.0
 sqlalchemy>=1.4.0,<2.0.0
 
@@ -15,7 +16,7 @@ pytest-cov>=2.0.0
 pylint>=2.0.0
 black>=21.0.0
 
-gunicorn>=23.0.0
+gunicorn>=20.0.0,<22.0.0
 click>=8.1.8
 markupsafe>=3.0.2
 requests>=2.32.3

@@ -1,0 +1,53 @@
+# Base image
+FROM python:3.9-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    MLFLOW_EXPERIMENT_NAME=tuning_experiment \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies - combine commands to reduce layers
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    gcc \
+    g++ \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file
+COPY docker/mlflow-requirements.txt .
+
+# Install Python dependencies - combine into fewer RUN commands
+RUN pip install numpy pandas scikit-learn joblib && \
+    pip install --no-dependencies mlflow==2.7.1 && \
+    pip install flask==2.3.3 werkzeug==2.3.7 gunicorn==21.2.0 flask-cors==5.0.1 && \
+    pip install sqlalchemy==2.0.40 psycopg2-binary==2.9.9 requests==2.32.3 psutil==5.9.8 && \
+    pip install alembic==1.13.1 cloudpickle==2.2.1 databricks-cli==0.18.0 && \
+    pip install entrypoints==0.4 gitpython==3.1.44 pyyaml==6.0.1 protobuf==4.25.3 && \
+    pip install markdown==3.7 Jinja2==3.1.6 importlib-metadata==6.11.0 sqlparse==0.5.3 && \
+    pip install querystring_parser==1.2.4
+
+# Create necessary directories and set permissions
+RUN mkdir -p /app/mlflow_data/artifacts && \
+    useradd -m appuser && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Health check - chỉ kiểm tra xem server có đang chạy không
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:5002/ || exit 1
+
+# Expose port for MLflow UI
+EXPOSE 5002
+
+# Command to run MLflow server
+CMD ["mlflow", "server", "--host", "0.0.0.0", "--port", "5002", "--backend-store-uri", "sqlite:////app/mlflow_data/mlflow.db", "--default-artifact-root", "/app/mlflow_data/artifacts"] 

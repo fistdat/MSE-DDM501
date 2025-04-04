@@ -9,6 +9,14 @@ import time
 import requests
 import sys
 import logging
+import json
+import mlflow
+from mlflow.tracking import MlflowClient
+import tempfile
+import shutil
+import pandas as pd
+import glob
+import re
 
 # Sử dụng import tương đối trong cùng package
 from .mlflow_config import (
@@ -211,6 +219,19 @@ def setup_mlflow_tracking(experiment_name=DEFAULT_EXPERIMENT_NAME, auto_start=Tr
     except Exception as e:
         logger.error(f"Lỗi khi thiết lập MLflow tracking: {str(e)}")
         return False
+
+# Thêm route cho healthcheck
+def add_healthcheck_route():
+    """Thêm route healthcheck vào MLflow server"""
+    from flask import Flask, jsonify
+    from mlflow.server import app as mlflow_app
+    
+    @mlflow_app.route('/health', methods=['GET'])
+    def health():
+        return jsonify({"status": "ok", "service": "MLflow Server"})
+    
+    logger.info("Đã thêm healthcheck route vào MLflow server")
+    return mlflow_app
 
 # Hàm chính khi chạy file này trực tiếp
 if __name__ == "__main__":

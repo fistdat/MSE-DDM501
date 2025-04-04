@@ -1,4 +1,4 @@
-.PHONY: install test lint format clean docker-build docker-run venv dev check clean-mlflow clean-all simple-tuning simple-tuning-tiny simple-tuning-gb simple-tuning-large save-best-model test-save-model reset-mlflow start-mlflow test-predict
+.PHONY: install test lint format clean docker-build docker-run venv dev check clean-mlflow clean-all simple-tuning simple-tuning-tiny simple-tuning-gb simple-tuning-large save-best-model test-save-model reset-mlflow start-mlflow test-predict lint-html fix-html docker-compose-build docker-compose-up docker-compose-up-d docker-compose-down docker-compose-logs docker-compose-clean docker-compose-test
 
 # Python version
 PYTHON = python3
@@ -23,16 +23,34 @@ dev: venv
 
 # Run tests with coverage
 test:
-	cd tests && python run_tests.py
+	PYTHONPATH=. python -m unittest discover -s tests
+
+# Run specific tests
+test-app:
+	PYTHONPATH=. python -m unittest tests.test_app_frontend
 
 # Run integration tests
 test-integration:
 	cd tests && python test_integration.py
 
+# Run Docker integration tests
+docker-compose-test:
+	cd tests && bash run_docker_tests.sh
+
 # Run linting
 lint:
-	pylint *.py tuning_scripts/*.py mlflow_scripts/*.py tests/*.py
+	pylint app.py
+	pylint tuning_scripts/*.py mlflow_scripts/*.py tests/*.py
 	black --check .
+
+# Lint HTML templates
+lint-html:
+	cd templates && html-minifier --lint index.html
+
+# Fix HTML issues
+fix-html:
+	cd templates && html-lint --fix index.html || echo "Chạy lệnh này yêu cầu cài đặt html-lint"
+	@echo "Để cài đặt html-lint, chạy: npm install -g html-lint"
 
 # Format code
 format:
@@ -50,6 +68,26 @@ docker-build:
 # Run Docker container
 docker-run:
 	docker run -p 5001:5001 -p 5002:5002 mlops-final-project
+
+# ===== DOCKER COMPOSE =====
+
+docker-compose-build:
+	docker compose build
+
+docker-compose-up:
+	docker compose up
+
+docker-compose-up-d:
+	docker compose up -d
+
+docker-compose-down:
+	docker compose down
+
+docker-compose-logs:
+	docker compose logs -f
+
+docker-compose-clean:
+	docker compose down -v
 
 # ===== TUNING SIÊU THAM SỐ =====
 
@@ -138,3 +176,18 @@ clean:
 clean-all: clean clean-mlflow
 	rm -f .DS_Store
 	rm -f models/*.joblib
+	rm -f models/*.json
+
+# ===== QUẢN LÝ PHIÊN BẢN =====
+
+# Gắn tag và đẩy lên GitHub
+tag-version:
+	@read -p "Nhập số phiên bản (v1.1, v1.2, etc): " VERSION; \
+	read -p "Nhập mô tả phiên bản: " MESSAGE; \
+	git tag -a $$VERSION -m "$$MESSAGE"; \
+	echo "Đã tạo tag $$VERSION"; \
+	echo "Để đẩy tag lên remote, chạy: git push origin $$VERSION"
+
+# Liệt kê các tag
+list-tags:
+	git tag -n

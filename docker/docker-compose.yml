@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  mlflow:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.mlflow
+    container_name: mlops-mlflow
+    ports:
+      - "5002:5002"
+    volumes:
+      - mlflow_data:/app/mlflow_data
+    networks:
+      - mlops-network
+    restart: unless-stopped
+    environment:
+      - MLFLOW_EXPERIMENT_NAME=tuning_experiment
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  flask-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.flask
+    container_name: mlops-flask
+    ports:
+      - "5001:5001"
+    volumes:
+      - models:/app/models
+      - tuning_results:/app/tuning_results
+      - mlflow_data:/app/mlflow_data:ro
+      - mlruns:/app/mlruns:ro
+    networks:
+      - mlops-network
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5002
+      - FLASK_ENV=production
+      - FLASK_SECRET_KEY=mlops-secret-key
+      - FLASK_APP=app.py
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+networks:
+  mlops-network:
+    name: mlops-network
+    driver: bridge
+
+volumes:
+  mlflow_data:
+    name: mlops_mlflow_data
+    driver: local
+  models:
+    name: mlops_models
+    driver: local
+  tuning_results: 
+    name: mlops_tuning_results
+    driver: local
+  mlruns:
+    name: mlops_mlruns
+    driver: local 
