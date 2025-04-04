@@ -10,3 +10,10 @@ mlartifacts/
 *.joblib
 models/
 best_model.joblib
+mlflow_data/
+images/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.db
