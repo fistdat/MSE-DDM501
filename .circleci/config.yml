@@ -10,12 +10,12 @@ jobs:
       - image: cimg/python:3.9
     steps:
       - checkout
-      - python/install-packages:
-          pkg-manager: pip
-          packages-file: requirements.txt
       - run:
-          name: Install test dependencies
-          command: pip install pytest pytest-cov flake8
+          name: Install dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install pytest pytest-cov flake8
       - run:
           name: Run linting
           command: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
