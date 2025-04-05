@@ -79,6 +79,22 @@ Nếu cần cập nhật các tệp trong container Docker:
 make docker-cp-files
 ```
 
+### Docker Hub Image
+
+Ứng dụng đã được đóng gói và đẩy lên Docker Hub, bạn có thể sử dụng trực tiếp thông qua lệnh:
+
+```bash
+# Kéo image từ Docker Hub
+docker pull fistdat/mlops-flask:v1.6
+
+# Chạy container từ image
+docker run -d -p 5001:5001 --name mlops-flask fistdat/mlops-flask:v1.6
+```
+
+Image Docker có sẵn tại:
+- `fistdat/mlops-flask:latest` - phiên bản mới nhất
+- `fistdat/mlops-flask:v1.6` - phiên bản ổn định v1.6
+
 ## Giao diện người dùng
 
 Ứng dụng cung cấp giao diện người dùng web với 3 tab chính:
