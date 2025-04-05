@@ -101,6 +101,7 @@ Dự án này được tích hợp với CircleCI để tự động hóa quá t
 
 1. CircleCI tự động build Docker image
 2. CircleCI đẩy image lên Docker Hub với tag `latest` và version mới (v1.X)
+3. Pipeline được cấu hình để chạy kiểm thử trước khi build và push
 
 Chi tiết về thiết lập và cấu hình CI/CD có thể được tìm thấy trong tệp [CI_SETUP.md](CI_SETUP.md).
 
