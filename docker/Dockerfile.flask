@@ -23,10 +23,17 @@ RUN apt-get update && \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Đảm bảo tracking URI được thiết lập sẵn
+RUN echo "export MLFLOW_TRACKING_URI=http://mlflow:5002" >> /etc/bash.bashrc
+
 # Copy requirements and install Python dependencies
 COPY docker/flask-requirements.txt .
 RUN pip install -r flask-requirements.txt && \
     pip install flask-cors==5.0.1 gunicorn==21.2.0
+
+# Cài đặt các thư viện từ requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY app.py /app/
@@ -39,7 +46,8 @@ COPY tuning_scripts/ /app/tuning_scripts/
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/models /app/tuning_results && \
     useradd -m appuser && \
-    chown -R appuser:appuser /app
+    chown -R appuser:appuser /app && \
+    chmod -R 777 /app/models /app/tuning_results
 
 # Switch to non-root user
 USER appuser

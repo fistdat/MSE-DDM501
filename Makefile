@@ -1,4 +1,4 @@
-.PHONY: install test lint format clean docker-build docker-run venv dev check clean-mlflow clean-all simple-tuning simple-tuning-tiny simple-tuning-gb simple-tuning-large save-best-model test-save-model reset-mlflow start-mlflow test-predict lint-html fix-html docker-compose-build docker-compose-up docker-compose-up-d docker-compose-down docker-compose-logs docker-compose-clean docker-compose-test
+.PHONY: install test lint format clean docker-build docker-run venv dev simple-tuning simple-tuning-tiny simple-tuning-gb simple-tuning-large save-best-model test-predict reset-mlflow start-mlflow docker-cp-files
 
 # Python version
 PYTHON = python3
@@ -21,21 +21,9 @@ dev: venv
 
 # ===== KIỂM TRA & ĐỊNH DẠNG CODE =====
 
-# Run tests with coverage
+# Run tests
 test:
 	PYTHONPATH=. python -m unittest discover -s tests
-
-# Run specific tests
-test-app:
-	PYTHONPATH=. python -m unittest tests.test_app_frontend
-
-# Run integration tests
-test-integration:
-	cd tests && python test_integration.py
-
-# Run Docker integration tests
-docker-compose-test:
-	cd tests && bash run_docker_tests.sh
 
 # Run linting
 lint:
@@ -43,51 +31,25 @@ lint:
 	pylint tuning_scripts/*.py mlflow_scripts/*.py tests/*.py
 	black --check .
 
-# Lint HTML templates
-lint-html:
-	cd templates && html-minifier --lint index.html
-
-# Fix HTML issues
-fix-html:
-	cd templates && html-lint --fix index.html || echo "Chạy lệnh này yêu cầu cài đặt html-lint"
-	@echo "Để cài đặt html-lint, chạy: npm install -g html-lint"
-
 # Format code
 format:
 	black .
-
-# Run all checks
-check: lint test
 
 # ===== DOCKER =====
 
 # Build Docker image
 docker-build:
-	docker build -t mlops-final-project .
+	docker build -t mlops-flask .
 
 # Run Docker container
 docker-run:
-	docker run -p 5001:5001 -p 5002:5002 mlops-final-project
+	docker run -p 5001:5001 -p 5002:5002 mlops-flask
 
-# ===== DOCKER COMPOSE =====
-
-docker-compose-build:
-	docker compose build
-
-docker-compose-up:
-	docker compose up
-
-docker-compose-up-d:
-	docker compose up -d
-
-docker-compose-down:
-	docker compose down
-
-docker-compose-logs:
-	docker compose logs -f
-
-docker-compose-clean:
-	docker compose down -v
+# Copy updated files to Docker container
+docker-cp-files:
+	docker cp templates/index.html mlops-flask:/app/templates/
+	docker cp app.py mlops-flask:/app/
+	docker restart mlops-flask
 
 # ===== TUNING SIÊU THAM SỐ =====
 
@@ -111,15 +73,11 @@ simple-tuning-large:
 custom-tuning:
 	python tuning_scripts/custom_hyperparam_tuning.py
 
-# ===== LƯU & QUẢN LÝ MÔ HÌNH =====
+# ===== LƯU MÔ HÌNH =====
 
 # Save best model from tuning results
 save-best-model:
 	python tuning_scripts/save_best_model.py
-
-# Test save best model functionality
-test-save-model:
-	python -m unittest tuning_scripts.test_save_best_model
 
 # Test predict functionality with sample data
 test-predict:
@@ -137,19 +95,11 @@ start-mlflow:
 		--backend-store-uri "./mlflow_data/mlflow.db" \
 		--default-artifact-root "./mlflow_data/artifacts"
 
-# Khôi phục experiments từ backup
-restore-experiments:
-	python mlflow_scripts/restore_experiments.py
-
 # ===== RUN APPLICATION =====
 
 # Chạy ứng dụng Flask
 run-app:
 	python app.py
-
-# Chạy ứng dụng với mô hình tốt nhất
-run-app-best-model:
-	python app.py --use-best-model
 
 # ===== DỌN DẸP =====
 
@@ -177,17 +127,3 @@ clean-all: clean clean-mlflow
 	rm -f .DS_Store
 	rm -f models/*.joblib
 	rm -f models/*.json
-
-# ===== QUẢN LÝ PHIÊN BẢN =====
-
-# Gắn tag và đẩy lên GitHub
-tag-version:
-	@read -p "Nhập số phiên bản (v1.1, v1.2, etc): " VERSION; \
-	read -p "Nhập mô tả phiên bản: " MESSAGE; \
-	git tag -a $$VERSION -m "$$MESSAGE"; \
-	echo "Đã tạo tag $$VERSION"; \
-	echo "Để đẩy tag lên remote, chạy: git push origin $$VERSION"
-
-# Liệt kê các tag
-list-tags:
-	git tag -n

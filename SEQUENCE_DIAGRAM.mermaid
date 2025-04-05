@@ -4,100 +4,96 @@ sequenceDiagram
     participant Flask_API as Flask API (app.py)
     participant ML_Library as ML Library (mlib.py)
     participant Scikit_learn as Scikit-learn
-    participant MLflow_Utils as MLflow Utilities (mlflow_utils.py)
     participant MLflow
     participant Tuning as Hyperparameter Tuning (simple_hyperparam_tuning.py)
+    participant SaveModel as Save Best Model (save_best_model.py)
 
     %% MLflow Server Management Flow
     rect rgb(230, 230, 255)
-    note over Client, Tuning: MLflow Server Management Flow
-    MLflow_Utils->>MLflow_Utils: Kiểm tra MLflow server đã chạy
-    MLflow_Utils->>MLflow_Utils: is_port_available(5002)
-    MLflow_Utils->>MLflow_Utils: ensure_artifact_dir()
-    MLflow_Utils->>+MLflow: Khởi động MLflow server
-    MLflow-->>-MLflow_Utils: Server khởi động thành công
+    note over Client, SaveModel: MLflow Server Management Flow
+    Flask_API->>Flask_API: Kiểm tra MLflow server đã chạy
+    Flask_API->>+MLflow: Khởi động MLflow server
+    MLflow-->>-Flask_API: Server khởi động thành công
     end
 
-    %% Health Check Flow
-    rect rgb(191, 223, 255)
-    note over Client, Tuning: Health Check Flow
-    Client->>+Flask_API: GET /health
-    Flask_API->>+ML_Library: Kiểm tra model.is_trained
-    ML_Library-->>-Flask_API: Trả về trạng thái (true/false)
-    Flask_API-->>-Client: Response {"status": "healthy", "model_trained": true/false}
-    end
-
-    %% Training Flow
+    %% Simple Tuning Flow
     rect rgb(200, 255, 200)
-    note over Client, Tuning: Training Flow
-    Client->>+Flask_API: POST /train (với dữ liệu training)
-    Flask_API->>Flask_API: Xác thực dữ liệu đầu vào
-    Flask_API->>+ML_Library: Gọi model.train(X, y)
-    ML_Library->>+Scikit_learn: Chia dữ liệu train_test_split()
-    Scikit_learn-->>-ML_Library: Trả về train/test sets
-    ML_Library->>+Scikit_learn: Chuẩn hóa dữ liệu với StandardScaler
-    Scikit_learn-->>-ML_Library: Trả về dữ liệu đã chuẩn hóa
-    ML_Library->>+Scikit_learn: Huấn luyện RandomForestClassifier
-    Scikit_learn-->>-ML_Library: Trả về model đã huấn luyện
-    ML_Library->>+Scikit_learn: Tính toán metrics (accuracy, precision, recall, f1)
-    Scikit_learn-->>-ML_Library: Trả về metrics
-    ML_Library->>+MLflow_Utils: Kiểm tra và thiết lập MLflow tracking
-    MLflow_Utils->>+MLflow: Thiết lập tracking URI và experiment
-    MLflow-->>-MLflow_Utils: Tracking đã thiết lập
-    MLflow_Utils-->>-ML_Library: Tracking sẵn sàng
-    ML_Library->>+MLflow: Ghi nhận metrics và parameters
-    MLflow-->>-ML_Library: Xác nhận đã ghi nhận
-    ML_Library-->>-Flask_API: Trả về metrics
-    Flask_API-->>-Client: Response {"message": "Model trained successfully", "metrics": {...}}
+    note over Client, SaveModel: Simple Tuning Flow
+    Client->>+Flask_API: Gửi form tuning đơn giản (POST /run_simple_tuning)
+    Flask_API->>Flask_API: Xử lý parameters từ form
+    Flask_API->>+Tuning: Chạy script simple_hyperparam_tuning.py
+    Tuning->>Tuning: Tạo dữ liệu synthetic
+    Tuning->>+Scikit_learn: Khởi tạo và thiết lập GridSearchCV
+    Scikit_learn->>Scikit_learn: Cross-validation và tuning
+    Scikit_learn-->>-Tuning: Trả về best model và parameters
+    Tuning->>+MLflow: Log metrics, parameters và model
+    MLflow-->>-Tuning: Xác nhận đã lưu
+    Tuning->>Tuning: Lưu kết quả vào tuning_results/*.json
+    Tuning-->>-Flask_API: Hoàn thành tuning
+    Flask_API-->>-Client: Redirect về trang chủ với thông báo thành công
+    end
+
+    %% Custom Tuning Flow
+    rect rgb(220, 255, 220)
+    note over Client, SaveModel: Custom Tuning Flow
+    Client->>+Flask_API: Gửi form tuning tùy chỉnh (POST /run_custom_tuning)
+    Flask_API->>Flask_API: Xử lý custom parameters từ form
+    Flask_API->>+Tuning: Chạy script custom_hyperparam_tuning.py
+    Tuning->>Tuning: Đọc tham số tùy chỉnh
+    Tuning->>Tuning: Tạo dữ liệu synthetic
+    Tuning->>+Scikit_learn: GridSearchCV với không gian tham số tùy chỉnh
+    Scikit_learn-->>-Tuning: Trả về best model và parameters
+    Tuning->>+MLflow: Log metrics, parameters và model
+    MLflow-->>-Tuning: Xác nhận đã lưu
+    Tuning-->>-Flask_API: Hoàn thành tuning
+    Flask_API-->>-Client: Redirect về trang chủ với thông báo thành công
+    end
+
+    %% View Tuning Results Flow
+    rect rgb(255, 240, 200)
+    note over Client, SaveModel: View Tuning Results Flow
+    Client->>+Flask_API: GET /view_result/<filename>
+    Flask_API->>Flask_API: Đọc file JSON từ tuning_results/
+    Flask_API->>+MLflow: Lấy thêm thông tin từ MLflow (nếu có)
+    MLflow-->>-Flask_API: Trả về thông tin chi tiết
+    Flask_API-->>-Client: Render template result_detail.html
+    end
+
+    %% Save Best Model Flow
+    rect rgb(255, 220, 220)
+    note over Client, SaveModel: Save Best Model Flow
+    Client->>+Flask_API: GET /run_save_best_model
+    Flask_API->>+SaveModel: Chạy script save_best_model.py
+    SaveModel->>+MLflow: Tìm kiếm run có F1-score cao nhất
+    MLflow-->>-SaveModel: Trả về thông tin best run
+    SaveModel->>+MLflow: Tải artifacts của model tốt nhất
+    MLflow-->>-SaveModel: Trả về model artifacts
+    SaveModel->>SaveModel: Lưu model vào models/best_model.joblib
+    SaveModel->>SaveModel: Lưu model info vào models/model_info.json
+    SaveModel-->>-Flask_API: Hoàn thành lưu model
+    Flask_API-->>-Client: Redirect về trang chủ với thông báo thành công
     end
 
     %% Prediction Flow
-    rect rgb(255, 220, 220)
-    note over Client, Tuning: Prediction Flow
-    Client->>+Flask_API: POST /predict (với dữ liệu dự đoán)
-    Flask_API->>Flask_API: Xác thực dữ liệu đầu vào
-    Flask_API->>+ML_Library: Gọi model.predict(X)
-    ML_Library->>ML_Library: Kiểm tra model đã huấn luyện
-    ML_Library->>+Scikit_learn: Chuẩn hóa dữ liệu đầu vào
-    Scikit_learn-->>-ML_Library: Trả về dữ liệu đã chuẩn hóa
-    ML_Library->>+Scikit_learn: Dự đoán với model
-    Scikit_learn-->>-ML_Library: Trả về kết quả dự đoán
-    ML_Library->>+Scikit_learn: Tính toán xác suất dự đoán
-    Scikit_learn-->>-ML_Library: Trả về xác suất
-    ML_Library-->>-Flask_API: Trả về kết quả và xác suất
-    Flask_API-->>-Client: Response {"predictions": [...], "probabilities": [...]}
-    end
-
-    %% Get Metrics Flow
-    rect rgb(255, 255, 200)
-    note over Client, Tuning: Get Metrics Flow
-    Client->>+Flask_API: GET /metrics
-    Flask_API->>+ML_Library: Gọi model.get_metrics()
-    ML_Library-->>-Flask_API: Trả về metrics hiện tại
-    Flask_API-->>-Client: Response {"accuracy": x, "precision": y, "recall": z, "f1": w}
-    end
-
-    %% Hyperparameter Tuning Flow
-    rect rgb(255, 200, 255)
-    note over Client, Tuning: Hyperparameter Tuning Flow
-    Client->>+Tuning: Chạy script simple_hyperparam_tuning.py
-    Tuning->>Tuning: Tạo dữ liệu với generate_data()
-    Tuning->>+MLflow_Utils: setup_mlflow tracking
-    MLflow_Utils->>+MLflow: Thiết lập experiment
-    MLflow-->>-MLflow_Utils: Experiment đã thiết lập
-    MLflow_Utils-->>-Tuning: Tracking sẵn sàng
-    Tuning->>Tuning: Tạo pipeline và param_grid
-    Tuning->>+Scikit_learn: GridSearchCV
-    Scikit_learn->>Scikit_learn: Cross-validation và đánh giá
-    Scikit_learn-->>-Tuning: Trả về best model và parameters
-    Tuning->>+MLflow: Ghi nhận best model và metrics
-    MLflow-->>-Tuning: Đã lưu trữ thông tin
-    Tuning-->>-Client: Kết quả tuning và best parameters
-    end
-
-    %% MLflow UI Access
     rect rgb(220, 220, 255)
-    note over Client, Tuning: MLflow UI Access
+    note over Client, SaveModel: Prediction Flow
+    Client->>+Flask_API: POST /predict với feature data
+    Flask_API->>Flask_API: Xử lý feature data từ form
+    alt Sử dụng model đã lưu
+        Flask_API->>Flask_API: Load model từ models/best_model.joblib
+    else Sử dụng model từ MLflow
+        Flask_API->>+MLflow: Load model từ MLflow run
+        MLflow-->>-Flask_API: Trả về model
+    end
+    Flask_API->>Flask_API: Format features với format_features_for_prediction()
+    Flask_API->>+Scikit_learn: model.predict() và model.predict_proba()
+    Scikit_learn-->>-Flask_API: Trả về predictions và probabilities
+    Flask_API-->>-Client: Render kết quả trên tab Phân loại
+    end
+
+    %% MLflow UI Access Flow
+    rect rgb(220, 255, 255)
+    note over Client, SaveModel: MLflow UI Access Flow
     Client->>+MLflow: Truy cập MLflow UI (http://localhost:5002)
-    MLflow-->>-Client: Hiển thị dashboard với experiments và metrics
+    MLflow-->>-Client: Hiển thị dashboard với runs và metrics
     end 

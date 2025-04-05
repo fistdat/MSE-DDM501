@@ -10,17 +10,22 @@ services:
       - "5002:5002"
     volumes:
       - mlflow_data:/app/mlflow_data
+      - mlruns:/app/mlruns
     networks:
       - mlops-network
     restart: unless-stopped
     environment:
       - MLFLOW_EXPERIMENT_NAME=tuning_experiment
+      - MLFLOW_TRACKING_URI=http://localhost:5002
+      - MLFLOW_BACKEND_STORE_URI=sqlite:////app/mlflow_data/mlflow.db
+      - MLFLOW_SERVE_ARTIFACTS=true
+      - MLFLOW_REGISTRY_STORE_URI=sqlite:////app/mlflow_data/mlflow.db
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5002/"]
-      interval: 20s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -41,8 +46,8 @@ services:
     volumes:
       - models:/app/models
       - tuning_results:/app/tuning_results
-      - mlflow_data:/app/mlflow_data:ro
-      - mlruns:/app/mlruns:ro
+      - mlflow_data:/app/mlflow_data
+      - mlruns:/app/mlruns
     networks:
       - mlops-network
     depends_on:
@@ -53,6 +58,7 @@ services:
       - FLASK_ENV=production
       - FLASK_SECRET_KEY=mlops-secret-key
       - FLASK_APP=app.py
+      - MLFLOW_EXPERIMENT_NAME=tuning_experiment
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]

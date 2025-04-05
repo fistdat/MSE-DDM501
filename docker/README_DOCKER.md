@@ -2,99 +2,81 @@
 
 ## Tổng quan
 
-Dự án này sử dụng Docker và Docker Compose để dễ dàng triển khai trên bất kỳ môi trường nào. Cấu trúc Docker bao gồm 2 dịch vụ chính:
+Dự án này sử dụng Docker để dễ dàng triển khai ứng dụng Flask và MLflow server. Cấu trúc Docker đơn giản với một container chính:
 
-1. **MLflow Server**: Quản lý thí nghiệm và lưu trữ các mô hình ML
-2. **Flask App**: Ứng dụng web phục vụ người dùng cuối
+- **mlops-flask**: Container chứa cả Flask App và MLflow Server
 
 ## Yêu cầu hệ thống
 
 - Docker (phiên bản 20.10+)
-- Docker Compose (phiên bản 2.0+)
-- Ít nhất 1GB RAM cho mỗi container
-- 2GB dung lượng ổ đĩa trống
+- Ít nhất 1GB RAM cho container
+- 1GB dung lượng ổ đĩa trống
 
-## Cấu trúc Docker
+## Xây dựng và chạy
 
-```
-MLOps-Lab02/
-├── docker-compose.yml        # Cấu hình Docker Compose
-├── Dockerfile.flask          # Dockerfile cho Flask App
-├── Dockerfile.mlflow         # Dockerfile cho MLflow Server
-├── flask-requirements.txt    # Các gói Python cho Flask App
-├── mlflow-requirements.txt   # Các gói Python cho MLflow
-└── build-and-run.sh          # Script để xây dựng và chạy
-```
-
-## Volumes
-
-Dự án sử dụng ba volume Docker để lưu trữ dữ liệu:
-
-- **mlflow_data**: Lưu trữ cơ sở dữ liệu và artifact của MLflow
-- **models**: Lưu trữ các mô hình đã huấn luyện
-- **tuning_results**: Lưu trữ kết quả tinh chỉnh siêu tham số
-
-## Cách sử dụng
-
-### Phương pháp 1: Sử dụng script tự động
-
-Chúng tôi cung cấp script `build-and-run.sh` để tự động hóa quá trình:
+### Xây dựng image
 
 ```bash
-# Cấp quyền thực thi cho script
-chmod +x build-and-run.sh
+# Sử dụng Makefile
+make docker-build
 
-# Chạy script
-./build-and-run.sh
+# hoặc sử dụng lệnh Docker trực tiếp
+docker build -t mlops-flask .
 ```
 
-### Phương pháp 2: Thủ công
+### Chạy container
 
-1. Xây dựng images:
 ```bash
-docker-compose build
+# Sử dụng Makefile
+make docker-run
+
+# hoặc sử dụng lệnh Docker trực tiếp
+docker run -p 5001:5001 -p 5002:5002 mlops-flask
 ```
 
-2. Chạy containers:
+### Truy cập ứng dụng
+
+- **Flask App**: http://localhost:5001
+- **MLflow UI**: http://localhost:5002
+
+## Cập nhật tệp trong container
+
+Nếu bạn sửa đổi mã nguồn và muốn cập nhật tệp trong container đang chạy, sử dụng lệnh:
+
 ```bash
-docker-compose up -d
+# Sử dụng Makefile (sẽ copy index.html và app.py, sau đó khởi động lại container)
+make docker-cp-files
+
+# hoặc sử dụng lệnh Docker trực tiếp
+docker cp templates/index.html mlops-flask:/app/templates/
+docker cp app.py mlops-flask:/app/
+docker restart mlops-flask
 ```
 
-3. Kiểm tra trạng thái:
+## Xử lý lỗi
+
+1. Nếu không thể kết nối đến ứng dụng:
 ```bash
-docker-compose ps
+# Kiểm tra container có đang chạy không
+docker ps
+
+# Xem logs
+docker logs mlops-flask
 ```
 
-4. Xem logs:
+2. Nếu cần khởi động lại container:
 ```bash
-docker-compose logs -f
+docker restart mlops-flask
 ```
 
-5. Dừng và xóa containers:
+3. Nếu cần xây dựng lại image:
 ```bash
-docker-compose down
+docker build --no-cache -t mlops-flask .
 ```
 
-## Truy cập các dịch vụ
+## Ghi chú
 
-- **Flask App**: http://localhost:5000
-- **MLflow UI**: http://localhost:5001
-
-## Troubleshooting
-
-1. Nếu gặp lỗi về quyền truy cập volume:
-```bash
-sudo chown -R $USER:$USER ./mlflow_data ./models ./tuning_results
-```
-
-2. Nếu cần xóa và xây dựng lại images:
-```bash
-docker-compose down --rmi all
-docker-compose build --no-cache
-```
-
-3. Nếu cần xóa tất cả dữ liệu và bắt đầu lại:
-```bash
-docker-compose down -v
-rm -rf mlflow_data/* models/* tuning_results/*
-``` 
+- Ứng dụng Flask chạy ở cổng 5001
+- MLflow Server chạy ở cổng 5002
+- Dữ liệu được lưu trong container, nên sẽ bị mất khi container bị xóa
+- Sử dụng lệnh `docker cp` để lấy dữ liệu hoặc mô hình ra khỏi container nếu cần 

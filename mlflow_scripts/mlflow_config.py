@@ -23,7 +23,11 @@ ARTIFACTS_PATH = os.path.join(MLFLOW_DIR, "artifacts")
 DB_PATH = os.path.join(MLFLOW_DIR, "mlflow.db")
 
 # URI cho backend storage (SQLite)
-TRACKING_URI = f"sqlite:///{DB_PATH}"
+# Kiểm tra xem có đang chạy trong Docker không
+if os.environ.get('MLFLOW_TRACKING_URI'):
+    TRACKING_URI = os.environ.get('MLFLOW_TRACKING_URI')
+else:
+    TRACKING_URI = f"sqlite:///{DB_PATH}"
 
 # Port cho MLflow UI
 MLFLOW_PORT = 5002
@@ -96,6 +100,18 @@ def setup_mlflow(reset=False):
         # Thiết lập tracking URI
         mlflow.set_tracking_uri(TRACKING_URI)
         logger.info(f"Đã thiết lập MLflow tracking URI: {TRACKING_URI}")
+        
+        # Thử kết nối với MLflow server
+        try:
+            client = MlflowClient()
+            client.search_experiments()  # Kiểm tra xem có kết nối được không
+            logger.info("Kết nối thành công tới MLflow server")
+        except Exception as e:
+            logger.warning(f"Cảnh báo: Không thể kết nối với MLflow server: {str(e)}")
+            logger.warning("Sẽ tiếp tục thực hiện nhưng có thể gặp lỗi sau này")
+        
+        # Tạo experiment mặc định nếu chưa tồn tại
+        create_experiment_if_not_exists()
         
         # Chờ một chút để MLflow khởi tạo database (nếu cần)
         time.sleep(1)
