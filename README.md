@@ -95,6 +95,15 @@ Image Docker có sẵn tại:
 - `fistdat/mlops-flask:latest` - phiên bản mới nhất
 - `fistdat/mlops-flask:v1.6` - phiên bản ổn định v1.6
 
+### Tích hợp CI/CD với CircleCI
+
+Dự án này được tích hợp với CircleCI để tự động hóa quá trình build và deploy lên Docker Hub. Mỗi khi có thay đổi được push lên nhánh `main`:
+
+1. CircleCI tự động build Docker image
+2. CircleCI đẩy image lên Docker Hub với tag `latest` và version mới (v1.X)
+
+Chi tiết về thiết lập và cấu hình CI/CD có thể được tìm thấy trong tệp [CI_SETUP.md](CI_SETUP.md).
+
 ## Giao diện người dùng
 
 Ứng dụng cung cấp giao diện người dùng web với 3 tab chính:

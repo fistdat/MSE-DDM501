@@ -1,0 +1,89 @@
+version: 2.1
+
+orbs:
+  docker: circleci/docker@2.2.0
+  python: circleci/python@2.1.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.9
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          packages:
+            - pytest
+            - pytest-cov
+            - flake8
+      - run:
+          name: Install dependencies
+          command: pip install -r requirements.txt
+      - run:
+          name: Run linting
+          command: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      - run:
+          name: Run tests
+          command: |
+            mkdir -p test-results
+            pytest tests/ --junitxml=test-results/junit.xml
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
+          destination: tr
+
+  build-and-push:
+    docker:
+      - image: cimg/base:2023.10
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.14
+      - docker/check:
+          docker-username: DOCKER_USERNAME
+          docker-password: DOCKER_PASSWORD
+      - run:
+          name: Build Docker image
+          command: |
+            docker build -t fistdat/mlops-flask:latest -f docker/Dockerfile.flask .
+      - run:
+          name: Basic security scan
+          command: |
+            # Simple container security check
+            if command -v trivy &> /dev/null; then
+              trivy image fistdat/mlops-flask:latest
+            else
+              echo "Trivy not available, skipping security scan"
+              echo "Consider installing trivy: https://aquasecurity.github.io/trivy/v0.38/getting-started/installation/"
+            fi
+      - run:
+          name: Push to Docker Hub
+          command: |
+            # Create a version tag with the CircleCI build number
+            VERSION="v1.$(echo $CIRCLE_BUILD_NUM)"
+            
+            echo "Tagging image with version: $VERSION"
+            docker tag fistdat/mlops-flask:latest fistdat/mlops-flask:$VERSION
+            
+            echo "Pushing image to Docker Hub..."
+            docker push fistdat/mlops-flask:latest
+            docker push fistdat/mlops-flask:$VERSION
+            
+            echo "Successfully pushed images:"
+            echo "- fistdat/mlops-flask:latest"
+            echo "- fistdat/mlops-flask:$VERSION"
+
+workflows:
+  version: 2
+  test-build-deploy:
+    jobs:
+      - test
+      - build-and-push:
+          requires:
+            - test
+          filters:
+            branches:
+              only: main
+          context:
+            - docker-hub-credentials 

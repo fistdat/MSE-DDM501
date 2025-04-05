@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+.github
+
+# CircleCI
+.circleci
+
+# Docker
+Dockerfile*
+docker-compose*
+.docker
+.dockerignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+venv/
+.venv/
+
+# Generated files
+*.log
+.DS_Store
+
+# Local data
+mlflow_data/
+mlruns/
+mlartifacts/
+tuning_results/
+
+# Don't exclude models directory
+!models/*.joblib
+
+# Documentation files
+README*
+CI_SETUP.md
+ARCHITECTURE.md
+SEQUENCE_DIAGRAM.mermaid 
