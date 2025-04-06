@@ -1,228 +1,228 @@
 # MLOps Project - Hyperparameter Tuning
 
-Dự án MLOps với Flask API, MLflow và Hyperparameter Tuning để huấn luyện và triển khai mô hình machine learning.
+MLOps project with Flask API, MLflow and Hyperparameter Tuning for training and deploying machine learning models.
 
-## Cấu trúc dự án
+## Project Structure
 
 ```
 MLOps-Lab02/
-├── app.py                         # Flask API chính
-├── mlib.py                        # Thư viện ML core
-├── tuning_scripts/                # Thư mục chứa các script tuning
-│   ├── simple_hyperparam_tuning.py    # Script tuning siêu tham số đơn giản
-│   ├── custom_hyperparam_tuning.py    # Script tuning siêu tham số tùy chỉnh
-│   ├── save_best_model.py             # Script lưu mô hình tốt nhất từ kết quả tuning
-│   └── register_model.py              # Script đăng ký mô hình
-├── mlflow_scripts/                # Thư mục chứa các script MLflow
-│   ├── mlflow_utils.py                # Tiện ích làm việc với MLflow
-│   ├── mlflow_config.py               # Cấu hình MLflow
-│   ├── run_mlflow_server.py           # Script khởi động MLflow server
-│   └── restart_mlflow.sh              # Script khởi động lại MLflow server
-├── models/                        # Thư mục chứa mô hình đã lưu
-│   └── best_model.joblib          # Mô hình tốt nhất đã lưu
-├── templates/                     # Templates HTML cho Flask UI
-│   ├── index.html                 # Trang chủ ứng dụng (3 tabs)
-│   └── result_detail.html         # Trang chi tiết kết quả tuning
-├── tuning_results/                # Thư mục chứa kết quả tuning
-├── tests/                         # Unit tests và Integration tests
-├── mlflow_data/                   # Dữ liệu MLflow 
-├── requirements.txt               # Các thư viện cần thiết
-└── Makefile                       # Các lệnh build và tiện ích
+├── app.py                         # Main Flask API
+├── mlib.py                        # Core ML library
+├── tuning_scripts/                # Directory containing tuning scripts
+│   ├── simple_hyperparam_tuning.py    # Simple hyperparameter tuning script
+│   ├── custom_hyperparam_tuning.py    # Custom hyperparameter tuning script
+│   ├── save_best_model.py             # Script to save best model from tuning results
+│   └── register_model.py              # Model registration script
+├── mlflow_scripts/                # Directory containing MLflow scripts
+│   ├── mlflow_utils.py                # MLflow utilities
+│   ├── mlflow_config.py               # MLflow configuration
+│   ├── run_mlflow_server.py           # Script to start MLflow server
+│   └── restart_mlflow.sh              # Script to restart MLflow server
+├── models/                        # Directory containing saved models
+│   └── best_model.joblib          # Best saved model
+├── templates/                     # HTML templates for Flask UI
+│   ├── index.html                 # Main application page (3 tabs)
+│   └── result_detail.html         # Tuning result details page
+├── tuning_results/                # Directory containing tuning results
+├── tests/                         # Unit tests and Integration tests
+├── mlflow_data/                   # MLflow data 
+├── requirements.txt               # Required libraries
+└── Makefile                       # Build and utility commands
 ```
 
-## Yêu cầu hệ thống
+## System Requirements
 
 - Python 3.9+
-- Thư viện: flask, scikit-learn, pandas, numpy, joblib, mlflow, matplotlib
+- Libraries: flask, scikit-learn, pandas, numpy, joblib, mlflow, matplotlib
 
-## Cài đặt
+## Installation
 
-1. Tạo môi trường ảo:
+1. Create a virtual environment:
 ```bash
 make venv
 ```
 
-2. Kích hoạt môi trường ảo:
+2. Activate the virtual environment:
 ```bash
 source venv/bin/activate  # Linux/Mac
 .\venv\Scripts\activate   # Windows
 ```
 
-3. Cài đặt dependencies:
+3. Install dependencies:
 ```bash
 make install
 ```
 
-## Chạy ứng dụng
+## Running the Application
 
-1. Khởi động MLflow server:
+1. Start the MLflow server:
 ```bash
 make start-mlflow
 ```
 
-2. Chạy ứng dụng Flask:
+2. Run the Flask application:
 ```bash
 python app.py
 ```
 
-Mở trình duyệt và truy cập: http://localhost:5001
+Open your browser and navigate to: http://localhost:5001
 
-### Sử dụng Docker
+### Using Docker
 
 ```bash
 make docker-build
 make docker-run
 ```
 
-Nếu cần cập nhật các tệp trong container Docker:
+If you need to update files in the Docker container:
 ```bash
 make docker-cp-files
 ```
 
 ### Docker Hub Image
 
-Ứng dụng đã được đóng gói và đẩy lên Docker Hub, bạn có thể sử dụng trực tiếp thông qua lệnh:
+The application has been packaged and pushed to Docker Hub, you can use it directly with the command:
 
 ```bash
-# Kéo image từ Docker Hub
+# Pull image from Docker Hub
 docker pull fistdat/mlops-flask:v1.6
 
-# Chạy container từ image
+# Run container from image
 docker run -d -p 5001:5001 --name mlops-flask fistdat/mlops-flask:v1.6
 ```
 
-Image Docker có sẵn tại:
-- `fistdat/mlops-flask:latest` - phiên bản mới nhất
-- `fistdat/mlops-flask:v1.6` - phiên bản ổn định v1.6
+Docker images available at:
+- `fistdat/mlops-flask:latest` - latest version
+- `fistdat/mlops-flask:v1.6` - stable version v1.6
 
-### Tích hợp CI/CD với CircleCI
+### CI/CD Integration with CircleCI
 
-Dự án này được tích hợp với CircleCI để tự động hóa quá trình build và deploy lên Docker Hub. Mỗi khi có thay đổi được push lên nhánh `main`:
+This project is integrated with CircleCI to automate the build and deploy process to Docker Hub. Whenever changes are pushed to the `main` branch:
 
-1. CircleCI tự động build Docker image
-2. CircleCI đẩy image lên Docker Hub với tag `latest` và version mới (v1.X)
-3. Pipeline được cấu hình để chạy kiểm thử trước khi build và push
+1. CircleCI automatically builds the Docker image
+2. CircleCI pushes the image to Docker Hub with both `latest` and new version (v1.X) tags
+3. The pipeline is configured to run tests before building and pushing
 
-Chi tiết về thiết lập và cấu hình CI/CD có thể được tìm thấy trong tệp [CI_SETUP.md](CI_SETUP.md).
+Details about the CI/CD setup and configuration can be found in the [CI_SETUP.md](CI_SETUP.md) file.
 
-## Giao diện người dùng
+## User Interface
 
-Ứng dụng cung cấp giao diện người dùng web với 3 tab chính:
+The application provides a web user interface with 3 main tabs:
 
-1. **Tuning Đơn Giản**:
-   - Lựa chọn loại mô hình (Random Forest, Gradient Boosting)
-   - Chọn không gian tham số (Tiny, Small, Medium)
-   - Chỉ định số lượng mẫu, features và folds
-   - Theo dõi tiến trình và kết quả từ MLflow
+1. **Simple Tuning**:
+   - Select model type (Random Forest, Gradient Boosting)
+   - Choose parameter space (Tiny, Small, Medium)
+   - Specify number of samples, features and folds
+   - Track progress and results from MLflow
 
-2. **Tuning Tùy chỉnh**:
-   - Tùy chọn chi tiết các siêu tham số cho từng loại mô hình
-   - Điều chỉnh quy mô và cấu hình thử nghiệm
-   - Kiểm soát tối ưu hóa siêu tham số
+2. **Custom Tuning**:
+   - Detailed hyperparameter options for each model type
+   - Adjust experiment scale and configuration
+   - Control hyperparameter optimization
 
-3. **Phân Loại**:
-   - Sử dụng mô hình đã được huấn luyện tốt nhất để phân loại dữ liệu mới
-   - Tạo dữ liệu ngẫu nhiên để thử nghiệm nhanh
-   - Xem kết quả phân loại và xác suất chi tiết
+3. **Classification**:
+   - Use the best trained model to classify new data
+   - Generate random data for quick testing
+   - View classification results and detailed probabilities
 
 ## API Endpoints
 
 ### Health Check
 - URL: `/health`
 - Method: GET
-- Response: Trạng thái của ứng dụng và model
+- Response: Application and model status
 
 ### Train Model
 - URL: `/train`
 - Method: POST
-- Body: JSON với trường "data" chứa dữ liệu training
-- Response: Metrics sau khi training
+- Body: JSON with "data" field containing training data
+- Response: Metrics after training
 
 ### Predict
 - URL: `/predict`
 - Method: POST
-- Body: Form data với trường "feature_data" chứa features dưới dạng JSON
-- Response: Kết quả phân loại và xác suất
+- Body: Form data with "feature_data" field containing features in JSON format
+- Response: Classification results and probabilities
 
 ### Get Metrics
 - URL: `/metrics`
 - Method: GET
-- Response: Metrics hiện tại của model
+- Response: Current model metrics
 
-## Tuning Siêu Tham Số
+## Hyperparameter Tuning
 
-### Thực hiện Tuning từ Command Line
+### Running Tuning from Command Line
 
 ```bash
-# Tuning đơn giản với tùy chọn mặc định (Random Forest, không gian small)
+# Simple tuning with default options (Random Forest, small space)
 python tuning_scripts/simple_hyperparam_tuning.py
-# hoặc
+# or
 make simple-tuning
 
-# Tuning với không gian tham số nhỏ (nhanh hơn)
+# Tuning with smaller parameter space (faster)
 python tuning_scripts/simple_hyperparam_tuning.py --space tiny
-# hoặc
+# or
 make simple-tuning-tiny
 
-# Tuning với Gradient Boosting
+# Tuning with Gradient Boosting
 python tuning_scripts/simple_hyperparam_tuning.py --model gradient_boosting
-# hoặc
+# or
 make simple-tuning-gb
 
-# Tuning với nhiều mẫu dữ liệu hơn
+# Tuning with more data samples
 python tuning_scripts/simple_hyperparam_tuning.py --samples 2000 --features 30
-# hoặc
+# or
 make simple-tuning-large
 ```
 
-Các tùy chọn có sẵn cho simple_hyperparam_tuning.py:
-- `--model`: Loại mô hình (`random_forest`, `gradient_boosting`)
-- `--space`: Kích thước không gian tham số (`tiny`, `small`, `medium`)
-- `--samples`: Số lượng mẫu dữ liệu
-- `--features`: Số lượng features
-- `--cv`: Số fold cross-validation
-- `--no-mlflow`: Không sử dụng MLflow tracking
+Available options for simple_hyperparam_tuning.py:
+- `--model`: Model type (`random_forest`, `gradient_boosting`)
+- `--space`: Parameter space size (`tiny`, `small`, `medium`)
+- `--samples`: Number of data samples
+- `--features`: Number of features
+- `--cv`: Number of cross-validation folds
+- `--no-mlflow`: Disable MLflow tracking
 
-### Xem Kết Quả
+### Viewing Results
 
 #### MLflow UI
 
-Truy cập: http://localhost:5002
+Access: http://localhost:5002
 
-#### Kết Quả Cục Bộ
+#### Local Results
 
-Tất cả kết quả tuning đều được lưu tự động trong thư mục `tuning_results/`.
+All tuning results are automatically saved in the `tuning_results/` directory.
 
-## Lưu Mô hình Tốt nhất
+## Saving the Best Model
 
-Sau khi thực hiện tuning, bạn có thể lưu mô hình tốt nhất:
+After running tuning, you can save the best model:
 
 ```bash
-# Lưu mô hình tốt nhất từ kết quả tuning
+# Save the best model from tuning results
 make save-best-model
 ```
 
-Script `save_best_model.py` sẽ:
-1. Tìm kiếm trong MLflow experiment `tuning_experiment` để xác định run có F1-score cao nhất
-2. Lưu mô hình vào thư mục `models/` dưới dạng file joblib
-3. Lưu thông tin chi tiết về mô hình tốt nhất vào file `model_info.json`
+The `save_best_model.py` script will:
+1. Search the MLflow experiment `tuning_experiment` to identify the run with the highest F1-score
+2. Save the model to the `models/` directory as a joblib file
+3. Save detailed information about the best model to `model_info.json`
 
-## Phân Loại Dữ Liệu với Mô Hình Tốt Nhất
+## Classifying Data with the Best Model
 
-Sau khi lưu mô hình tốt nhất, bạn có thể sử dụng mô hình này để phân loại dữ liệu mới:
+After saving the best model, you can use it to classify new data:
 
-1. **Thông qua giao diện web**:
-   - Truy cập tab "Phân Loại" trên giao diện người dùng
-   - Nhập dữ liệu đầu vào dưới dạng JSON hoặc sử dụng nút "Tạo Dữ Liệu Ngẫu Nhiên"
-   - Nhấn "Phân Loại" để xem kết quả
+1. **Through the web interface**:
+   - Access the "Classification" tab in the user interface
+   - Enter input data in JSON format or use the "Generate Random Data" button
+   - Click "Classify" to see the results
 
-2. **Thông qua API**:
+2. **Through the API**:
    ```bash
    curl -X POST http://localhost:5001/predict \
      -d "feature_data=[{\"feature_1\": 0.5, \"feature_2\": 0.3, ...}]"
    ```
 
-3. **Sử dụng lệnh test**:
+3. **Using the test command**:
    ```bash
    make test-predict
    ```
@@ -246,7 +246,7 @@ make format
 
 ### Clean Up
 ```bash
-make clean          # Dọn dẹp cache, __pycache__, v.v.
-make clean-mlflow   # Xóa dữ liệu MLflow và kết quả tuning
-make clean-all      # Xóa tất cả, kể cả models
+make clean          # Clean cache, __pycache__, etc.
+make clean-mlflow   # Remove MLflow data and tuning results
+make clean-all      # Remove everything, including models
 ```

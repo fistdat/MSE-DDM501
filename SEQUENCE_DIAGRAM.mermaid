@@ -1,5 +1,5 @@
 sequenceDiagram
-    %% Định nghĩa các actor và thành phần
+    %% Define actors and components
     actor Client
     participant Flask_API as Flask API (app.py)
     participant ML_Library as ML Library (mlib.py)
@@ -11,89 +11,89 @@ sequenceDiagram
     %% MLflow Server Management Flow
     rect rgb(230, 230, 255)
     note over Client, SaveModel: MLflow Server Management Flow
-    Flask_API->>Flask_API: Kiểm tra MLflow server đã chạy
-    Flask_API->>+MLflow: Khởi động MLflow server
-    MLflow-->>-Flask_API: Server khởi động thành công
+    Flask_API->>Flask_API: Check if MLflow server is running
+    Flask_API->>+MLflow: Start MLflow server
+    MLflow-->>-Flask_API: Server started successfully
     end
 
     %% Simple Tuning Flow
     rect rgb(200, 255, 200)
     note over Client, SaveModel: Simple Tuning Flow
-    Client->>+Flask_API: Gửi form tuning đơn giản (POST /run_simple_tuning)
-    Flask_API->>Flask_API: Xử lý parameters từ form
-    Flask_API->>+Tuning: Chạy script simple_hyperparam_tuning.py
-    Tuning->>Tuning: Tạo dữ liệu synthetic
-    Tuning->>+Scikit_learn: Khởi tạo và thiết lập GridSearchCV
-    Scikit_learn->>Scikit_learn: Cross-validation và tuning
-    Scikit_learn-->>-Tuning: Trả về best model và parameters
-    Tuning->>+MLflow: Log metrics, parameters và model
-    MLflow-->>-Tuning: Xác nhận đã lưu
-    Tuning->>Tuning: Lưu kết quả vào tuning_results/*.json
-    Tuning-->>-Flask_API: Hoàn thành tuning
-    Flask_API-->>-Client: Redirect về trang chủ với thông báo thành công
+    Client->>+Flask_API: Submit simple tuning form (POST /run_simple_tuning)
+    Flask_API->>Flask_API: Process parameters from form
+    Flask_API->>+Tuning: Run simple_hyperparam_tuning.py script
+    Tuning->>Tuning: Generate synthetic data
+    Tuning->>+Scikit_learn: Initialize and set up GridSearchCV
+    Scikit_learn->>Scikit_learn: Cross-validation and tuning
+    Scikit_learn-->>-Tuning: Return best model and parameters
+    Tuning->>+MLflow: Log metrics, parameters and model
+    MLflow-->>-Tuning: Confirm logging
+    Tuning->>Tuning: Save results to tuning_results/*.json
+    Tuning-->>-Flask_API: Tuning completed
+    Flask_API-->>-Client: Redirect to home page with success message
     end
 
     %% Custom Tuning Flow
     rect rgb(220, 255, 220)
     note over Client, SaveModel: Custom Tuning Flow
-    Client->>+Flask_API: Gửi form tuning tùy chỉnh (POST /run_custom_tuning)
-    Flask_API->>Flask_API: Xử lý custom parameters từ form
-    Flask_API->>+Tuning: Chạy script custom_hyperparam_tuning.py
-    Tuning->>Tuning: Đọc tham số tùy chỉnh
-    Tuning->>Tuning: Tạo dữ liệu synthetic
-    Tuning->>+Scikit_learn: GridSearchCV với không gian tham số tùy chỉnh
-    Scikit_learn-->>-Tuning: Trả về best model và parameters
-    Tuning->>+MLflow: Log metrics, parameters và model
-    MLflow-->>-Tuning: Xác nhận đã lưu
-    Tuning-->>-Flask_API: Hoàn thành tuning
-    Flask_API-->>-Client: Redirect về trang chủ với thông báo thành công
+    Client->>+Flask_API: Submit custom tuning form (POST /run_custom_tuning)
+    Flask_API->>Flask_API: Process custom parameters from form
+    Flask_API->>+Tuning: Run custom_hyperparam_tuning.py script
+    Tuning->>Tuning: Read custom parameters
+    Tuning->>Tuning: Generate synthetic data
+    Tuning->>+Scikit_learn: GridSearchCV with custom parameter space
+    Scikit_learn-->>-Tuning: Return best model and parameters
+    Tuning->>+MLflow: Log metrics, parameters and model
+    MLflow-->>-Tuning: Confirm logging
+    Tuning-->>-Flask_API: Tuning completed
+    Flask_API-->>-Client: Redirect to home page with success message
     end
 
     %% View Tuning Results Flow
     rect rgb(255, 240, 200)
     note over Client, SaveModel: View Tuning Results Flow
     Client->>+Flask_API: GET /view_result/<filename>
-    Flask_API->>Flask_API: Đọc file JSON từ tuning_results/
-    Flask_API->>+MLflow: Lấy thêm thông tin từ MLflow (nếu có)
-    MLflow-->>-Flask_API: Trả về thông tin chi tiết
-    Flask_API-->>-Client: Render template result_detail.html
+    Flask_API->>Flask_API: Read JSON file from tuning_results/
+    Flask_API->>+MLflow: Get additional information from MLflow (if available)
+    MLflow-->>-Flask_API: Return detailed information
+    Flask_API-->>-Client: Render result_detail.html template
     end
 
     %% Save Best Model Flow
     rect rgb(255, 220, 220)
     note over Client, SaveModel: Save Best Model Flow
     Client->>+Flask_API: GET /run_save_best_model
-    Flask_API->>+SaveModel: Chạy script save_best_model.py
-    SaveModel->>+MLflow: Tìm kiếm run có F1-score cao nhất
-    MLflow-->>-SaveModel: Trả về thông tin best run
-    SaveModel->>+MLflow: Tải artifacts của model tốt nhất
-    MLflow-->>-SaveModel: Trả về model artifacts
-    SaveModel->>SaveModel: Lưu model vào models/best_model.joblib
-    SaveModel->>SaveModel: Lưu model info vào models/model_info.json
-    SaveModel-->>-Flask_API: Hoàn thành lưu model
-    Flask_API-->>-Client: Redirect về trang chủ với thông báo thành công
+    Flask_API->>+SaveModel: Run save_best_model.py script
+    SaveModel->>+MLflow: Find run with highest F1-score
+    MLflow-->>-SaveModel: Return best run information
+    SaveModel->>+MLflow: Download model artifacts
+    MLflow-->>-SaveModel: Return model artifacts
+    SaveModel->>SaveModel: Save model to models/best_model.joblib
+    SaveModel->>SaveModel: Save model info to models/model_info.json
+    SaveModel-->>-Flask_API: Model saving completed
+    Flask_API-->>-Client: Redirect to home page with success message
     end
 
     %% Prediction Flow
     rect rgb(220, 220, 255)
     note over Client, SaveModel: Prediction Flow
-    Client->>+Flask_API: POST /predict với feature data
-    Flask_API->>Flask_API: Xử lý feature data từ form
-    alt Sử dụng model đã lưu
-        Flask_API->>Flask_API: Load model từ models/best_model.joblib
-    else Sử dụng model từ MLflow
-        Flask_API->>+MLflow: Load model từ MLflow run
-        MLflow-->>-Flask_API: Trả về model
+    Client->>+Flask_API: POST /predict with feature data
+    Flask_API->>Flask_API: Process feature data from form
+    alt Use saved model
+        Flask_API->>Flask_API: Load model from models/best_model.joblib
+    else Use model from MLflow
+        Flask_API->>+MLflow: Load model from MLflow run
+        MLflow-->>-Flask_API: Return model
     end
-    Flask_API->>Flask_API: Format features với format_features_for_prediction()
-    Flask_API->>+Scikit_learn: model.predict() và model.predict_proba()
-    Scikit_learn-->>-Flask_API: Trả về predictions và probabilities
-    Flask_API-->>-Client: Render kết quả trên tab Phân loại
+    Flask_API->>Flask_API: Format features with format_features_for_prediction()
+    Flask_API->>+Scikit_learn: model.predict() and model.predict_proba()
+    Scikit_learn-->>-Flask_API: Return predictions and probabilities
+    Flask_API-->>-Client: Render results on Classification tab
     end
 
     %% MLflow UI Access Flow
     rect rgb(220, 255, 255)
     note over Client, SaveModel: MLflow UI Access Flow
-    Client->>+MLflow: Truy cập MLflow UI (http://localhost:5002)
-    MLflow-->>-Client: Hiển thị dashboard với runs và metrics
+    Client->>+MLflow: Access MLflow UI (http://localhost:5002)
+    MLflow-->>-Client: Display dashboard with runs and metrics
     end 

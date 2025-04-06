@@ -3,7 +3,7 @@
 # Python version
 PYTHON = python3
 
-# ===== CÀI ĐẶT & MÔI TRƯỜNG =====
+# ===== INSTALLATION & ENVIRONMENT =====
 
 # Install dependencies
 install:
@@ -13,13 +13,13 @@ install:
 # Create virtual environment
 venv:
 	$(PYTHON) -m venv venv
-	@echo "Môi trường ảo đã được tạo. Kích hoạt bằng 'source venv/bin/activate' (Linux/Mac) hoặc 'venv\\Scripts\\activate' (Windows)"
+	@echo "Virtual environment created. Activate with 'source venv/bin/activate' (Linux/Mac) or 'venv\\Scripts\\activate' (Windows)"
 
 # Development setup
 dev: venv
 	. venv/bin/activate && pip install -e .
 
-# ===== KIỂM TRA & ĐỊNH DẠNG CODE =====
+# ===== TESTING & CODE FORMAT =====
 
 # Run tests
 test:
@@ -39,11 +39,11 @@ format:
 
 # Build Docker image
 docker-build:
-	docker build -t mlops-flask .
+	docker build -t fistdat/mlops-flask:latest -f docker/Dockerfile.flask .
 
 # Run Docker container
 docker-run:
-	docker run -p 5001:5001 -p 5002:5002 mlops-flask
+	docker run -d -p 5001:5001 --name mlops-flask fistdat/mlops-flask:latest
 
 # Copy updated files to Docker container
 docker-cp-files:
@@ -51,29 +51,29 @@ docker-cp-files:
 	docker cp app.py mlops-flask:/app/
 	docker restart mlops-flask
 
-# ===== TUNING SIÊU THAM SỐ =====
+# ===== HYPERPARAMETER TUNING =====
 
 # Simple Hyperparameter Tuning
 simple-tuning:
 	python tuning_scripts/simple_hyperparam_tuning.py
 
-# Tuning với không gian tham số nhỏ (nhanh)
+# Tuning with small parameter space (fast)
 simple-tuning-tiny:
 	python tuning_scripts/simple_hyperparam_tuning.py --space tiny
 
-# Tuning với Gradient Boosting
+# Tuning with Gradient Boosting
 simple-tuning-gb:
 	python tuning_scripts/simple_hyperparam_tuning.py --model gradient_boosting
 
-# Tuning với nhiều dữ liệu hơn
+# Tuning with more data
 simple-tuning-large:
 	python tuning_scripts/simple_hyperparam_tuning.py --samples 2000 --features 30
 
-# Custom Hyperparameter Tuning - Tuning tùy chỉnh
+# Custom Hyperparameter Tuning
 custom-tuning:
 	python tuning_scripts/custom_hyperparam_tuning.py
 
-# ===== LƯU MÔ HÌNH =====
+# ===== MODEL MANAGEMENT =====
 
 # Save best model from tuning results
 save-best-model:
@@ -85,11 +85,11 @@ test-predict:
 
 # ===== MLFLOW =====
 
-# Khởi động lại MLflow hoàn toàn (xóa dữ liệu cũ và khởi động lại)
+# Completely reset MLflow (remove old data and restart)
 reset-mlflow:
 	cd mlflow_scripts && ./restart_mlflow.sh
 
-# Khởi động MLflow server
+# Start MLflow server
 start-mlflow:
 	python mlflow_scripts/run_mlflow_server.py --host 127.0.0.1 --port 5002 \
 		--backend-store-uri "./mlflow_data/mlflow.db" \
@@ -97,11 +97,11 @@ start-mlflow:
 
 # ===== RUN APPLICATION =====
 
-# Chạy ứng dụng Flask
+# Run Flask application
 run-app:
 	python app.py
 
-# ===== DỌN DẸP =====
+# ===== CLEANUP =====
 
 # Clean MLflow artifacts and tuning results
 clean-mlflow:

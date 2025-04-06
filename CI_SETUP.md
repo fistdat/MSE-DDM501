@@ -1,72 +1,71 @@
-# Thiết lập Tích hợp Liên tục (CI/CD) với CircleCI
+# Continuous Integration (CI/CD) Setup with CircleCI
 
-Dự án này sử dụng CircleCI để tự động hóa quá trình build và deploy Docker image lên Docker Hub mỗi khi có thay đổi được push lên nhánh `main`.
+This project utilizes CircleCI to automate the process of building and deploying Docker images to Docker Hub whenever changes are pushed to the `main` branch.
 
-## Cấu trúc CI/CD
+## CI/CD Structure
 
 - **GitHub Repository**: [fistdat/MSE-DDM501](https://github.com/fistdat/MSE-DDM501)
 - **Docker Hub Repository**: [fistdat/mlops-flask](https://hub.docker.com/repository/docker/fistdat/mlops-flask/general)
 - **CI/CD Service**: CircleCI
 
-## Cách thiết lập
+## Setup Instructions
 
-### 1. Tạo tài khoản CircleCI
+### 1. Create a CircleCI Account
 
-1. Đăng ký tài khoản tại [CircleCI](https://circleci.com/) bằng tài khoản GitHub
-2. Kết nối CircleCI với GitHub repository của bạn (fistdat/MSE-DDM501)
+1. Register for an account at [CircleCI](https://circleci.com/) using your GitHub account
+2. Connect CircleCI to your GitHub repository (fistdat/MSE-DDM501)
 
-### 2. Cấu hình Docker Hub Credentials trong CircleCI
+### 2. Configure Docker Hub Credentials in CircleCI
 
-1. Đăng nhập vào CircleCI
-2. Chọn Organization Settings (hoặc Project Settings)
-3. Chọn "Contexts"
-4. Tạo mới context với tên "docker-hub-credentials"
-5. Thêm hai biến môi trường:
-   - DOCKER_USERNAME: tên đăng nhập Docker Hub của bạn
-   - DOCKER_PASSWORD: mật khẩu hoặc token truy cập của bạn (khuyến nghị sử dụng Personal Access Token)
+1. Log in to CircleCI
+2. Select Organization Settings (or Project Settings)
+3. Select "Contexts"
+4. Create a new context named "docker-hub-credentials"
+5. Add two environment variables:
+   - DOCKER_USERNAME: your Docker Hub username
+   - DOCKER_PASSWORD: your password or access token (using a Personal Access Token is recommended)
 
-### 3. Tệp Cấu hình CircleCI
+### 3. CircleCI Configuration File
 
-Dự án đã được định cấu hình với tệp `.circleci/config.yml` để thực hiện các bước sau:
+The project has been configured with a `.circleci/config.yml` file that performs the following steps:
 
-- Checkout code từ GitHub
-- Build Docker image từ Dockerfile.flask
-- Đẩy image lên Docker Hub với tag `latest`
-- Tạo tag version mới dựa trên số build của CircleCI (ví dụ: v1.42)
-- Đẩy image được tag version lên Docker Hub
+- Checks out code from GitHub
+- Builds a Docker image using Dockerfile.flask
+- Tags the image with version information
+- Pushes the image to Docker Hub with appropriate tags
 
-## Quy trình CI/CD
+## CI/CD Workflow
 
-1. Developer push code lên nhánh `main` của GitHub repository
-2. CircleCI tự động phát hiện thay đổi và trigger workflow
-3. CircleCI build Docker image dựa trên Dockerfile.flask
-4. CircleCI đăng nhập vào Docker Hub bằng credentials được cấu hình
-5. Image được push lên Docker Hub dưới hai tag:
+1. Developer pushes code to the `main` branch of the GitHub repository
+2. CircleCI automatically detects the change and triggers the workflow
+3. CircleCI builds the Docker image based on Dockerfile.flask
+4. CircleCI logs in to Docker Hub using the configured credentials
+5. The image is pushed to Docker Hub under two tags:
    - `fistdat/mlops-flask:latest`
-   - `fistdat/mlops-flask:v1.X` (X là số build của CircleCI)
+   - `fistdat/mlops-flask:v1.X` (X is the CircleCI build number)
 
-## Kiểm tra và Theo dõi
+## Monitoring and Verification
 
-- Theo dõi quá trình build trên CircleCI Dashboard
-- Kiểm tra xem image đã được đẩy lên Docker Hub chưa
-- Sử dụng lệnh `docker pull fistdat/mlops-flask:latest` để kéo image mới nhất về
+- Monitor the build process on the CircleCI Dashboard
+- Verify that the image has been pushed to Docker Hub
+- Use the command `docker pull fistdat/mlops-flask:latest` to pull the latest image
 
-## Xử lý Lỗi Phổ biến
+## Common Issues and Solutions
 
-1. **Lỗi xác thực Docker Hub**:
-   - Kiểm tra lại DOCKER_USERNAME và DOCKER_PASSWORD trong context
-   - Đảm bảo token truy cập vẫn còn hiệu lực
+1. **Docker Hub Authentication Error**:
+   - Verify the DOCKER_USERNAME and DOCKER_PASSWORD in the context
+   - Ensure the access token is still valid
 
-2. **Lỗi build Docker**:
-   - Kiểm tra logs trong CircleCI 
-   - Đảm bảo Dockerfile không có lỗi
+2. **Docker Build Error**:
+   - Check the logs in CircleCI
+   - Ensure the Dockerfile has no errors
 
-3. **Workflow không được kích hoạt**:
-   - Kiểm tra cấu hình branch filters
-   - Đảm bảo đang push lên nhánh `main`
+3. **Workflow Not Triggered**:
+   - Verify the branch filters configuration
+   - Make sure you're pushing to the `main` branch
 
-## Cải tiến Tương lai
+## Future Improvements
 
-- Thêm kiểm thử tự động trước khi build
-- Thêm kiểm tra bảo mật cho Docker image
-- Tích hợp thông báo qua Slack/Email khi build thành công/thất bại 
+- Add automated testing before building
+- Add security scanning for Docker images
+- Integrate notifications via Slack/Email for build success/failure 
