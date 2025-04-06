@@ -224,9 +224,46 @@ make save-best-model
 ```
 
 The `save_best_model.py` script will:
-1. Search the MLflow experiment `tuning_experiment` to identify the run with the highest F1-score
+1. Search the MLflow experiment `tuning_experiment` to identify the run with the highest accuracy metric
 2. Save the model to the `models/` directory as a joblib file
 3. Save detailed information about the best model to `model_info.json`
+
+### Best Model Selection Logic
+
+The application uses a robust logic to select and utilize the best trained model:
+
+1. **Primary Metric**: Models are ranked primarily by their **accuracy** scores. This was chosen because accuracy provides a balanced measure for classification tasks.
+
+2. **Selection Process**:
+   - The system scans all experiment runs in MLflow
+   - Each run's metrics are compared with emphasis on the accuracy value
+   - The run with the highest accuracy is selected as the best model
+   - In case of tied accuracy, other metrics like F1-score can be considered
+
+3. **Model Retrieval Options**:
+   - **Manual Trigger**: Users can click the "Find and Use Best Model" button in the Classification tab
+   - **API Endpoint**: `/find_best_model/<experiment_id>?metric=accuracy` endpoint can be called programmatically
+   - **Save Best Model**: `/run_save_best_model` endpoint saves the best model for future predictions
+
+4. **Implementation Flow**:
+   - When the best model needs to be found, the system:
+     1. Connects to MLflow tracking server 
+     2. Retrieves all runs from the specified experiment
+     3. Compares accuracy metrics (or other specified metrics)
+     4. Selects the highest performing model
+     5. Optionally saves the model locally and registers it in MLflow Model Registry
+
+5. **JavaScript Integration**:
+   - The web interface includes JavaScript that automates finding and saving the best model
+   - When the "Find and Use Best Model" button is clicked, it:
+     1. Calls `/find_best_model/1?metric=accuracy`
+     2. Then calls `/run_save_best_model`
+     3. Reloads the page to display the newly selected model
+
+6. **Model Persistence**:
+   - The best model is saved to `models/best_model.joblib`
+   - Model metadata (accuracy, F1-score, parameters, etc.) is saved to `models/model_info.json`
+   - The model is also registered in the MLflow Model Registry for tracking
 
 ## Classifying Data with the Best Model
 

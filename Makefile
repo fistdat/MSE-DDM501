@@ -79,6 +79,10 @@ custom-tuning:
 save-best-model:
 	python tuning_scripts/save_best_model.py
 
+# Find best model by accuracy
+find-best-model:
+	curl -X GET "http://localhost:5001/find_best_model/1?metric=accuracy"
+
 # Test predict functionality with sample data
 test-predict:
 	python -c "import json, requests; print(requests.post('http://localhost:5001/predict', data={'feature_data': json.dumps([{f'feature_{i}': float(i) for i in range(20)}])}).json())"

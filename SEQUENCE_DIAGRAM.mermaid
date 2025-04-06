@@ -59,17 +59,27 @@ sequenceDiagram
     Flask_API-->>-Client: Render result_detail.html template
     end
 
-    %% Save Best Model Flow
+    %% Find and Save Best Model Flow - UPDATED
     rect rgb(255, 220, 220)
-    note over Client, SaveModel: Save Best Model Flow
-    Client->>+Flask_API: GET /run_save_best_model
+    note over Client, SaveModel: Find and Save Best Model Flow
+    alt Manual trigger via UI
+        Client->>+Flask_API: Click "Find and Use Best Model" button
+        Flask_API->>+Flask_API: JavaScript calls /find_best_model/1?metric=accuracy
+        Flask_API->>+MLflow: Find run with highest accuracy
+        MLflow-->>-Flask_API: Return best run information
+        Flask_API-->>-Flask_API: Show success message
+        Flask_API->>+Flask_API: JavaScript calls /run_save_best_model
+    else API trigger
+        Client->>+Flask_API: GET /run_save_best_model
+    end
     Flask_API->>+SaveModel: Run save_best_model.py script
-    SaveModel->>+MLflow: Find run with highest F1-score
+    SaveModel->>+MLflow: Find run with highest accuracy
     MLflow-->>-SaveModel: Return best run information
     SaveModel->>+MLflow: Download model artifacts
     MLflow-->>-SaveModel: Return model artifacts
     SaveModel->>SaveModel: Save model to models/best_model.joblib
     SaveModel->>SaveModel: Save model info to models/model_info.json
+    SaveModel->>SaveModel: Register model in MLflow Model Registry
     SaveModel-->>-Flask_API: Model saving completed
     Flask_API-->>-Client: Redirect to home page with success message
     end
