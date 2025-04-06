@@ -35,7 +35,8 @@ jobs:
       - run:
           name: Install Docker Compose v2
           command: |
-            sudo apt-get update && sudo apt-get install -y docker-compose-plugin
+            sudo apt-get update
+            sudo apt-get install -y docker-compose-plugin
             docker compose version || sudo apt-get install -y docker-compose
       - run:
           name: Define VERSION variable
@@ -44,21 +45,39 @@ jobs:
             source $BASH_ENV
             echo "Set image version to: $VERSION"
       - run:
-          name: Build and tag Flask image
-          command: |
-            echo "Building Flask image with tag: ${DOCKER_HUB_USER}/mlops-flask:${VERSION}"
-            docker build -t ${DOCKER_HUB_USER}/mlops-flask:${VERSION} -f docker/Dockerfile.flask .
-            docker tag ${DOCKER_HUB_USER}/mlops-flask:${VERSION} ${DOCKER_HUB_USER}/mlops-flask:latest
-      - run:
-          name: Build and tag MLflow image
+          name: Build MLflow image
           command: |
             echo "Building MLflow image with tag: ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}"
             docker build -t ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION} -f docker/Dockerfile.mlflow .
             docker tag ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION} ${DOCKER_HUB_USER}/mlops-mlflow:latest
       - run:
+          name: Build Flask image
+          command: |
+            echo "Building Flask image with tag: ${DOCKER_HUB_USER}/mlops-flask:${VERSION}"
+            docker build -t ${DOCKER_HUB_USER}/mlops-flask:${VERSION} -f docker/Dockerfile.flask .
+            docker tag ${DOCKER_HUB_USER}/mlops-flask:${VERSION} ${DOCKER_HUB_USER}/mlops-flask:latest
+      - run:
           name: Verify images
           command: |
             docker images | grep ${DOCKER_HUB_USER}
+      - run:
+          name: Push MLflow image to Docker Hub
+          command: |
+            echo "Pushing MLflow image to Docker Hub"
+            docker push ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}
+            docker push ${DOCKER_HUB_USER}/mlops-mlflow:latest
+            echo "Successfully pushed MLflow images:"
+            echo "- ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}"
+            echo "- ${DOCKER_HUB_USER}/mlops-mlflow:latest"
+      - run:
+          name: Push Flask image to Docker Hub
+          command: |
+            echo "Pushing Flask image to Docker Hub"
+            docker push ${DOCKER_HUB_USER}/mlops-flask:${VERSION}
+            docker push ${DOCKER_HUB_USER}/mlops-flask:latest
+            echo "Successfully pushed Flask images:"
+            echo "- ${DOCKER_HUB_USER}/mlops-flask:${VERSION}"
+            echo "- ${DOCKER_HUB_USER}/mlops-flask:latest"
       - run:
           name: Create docker-compose test file
           command: |
@@ -74,9 +93,15 @@ jobs:
               echo '      - "5002:5002"'
               echo "    networks:"
               echo "      - mlops-network"
+              echo "    volumes:"
+              echo "      - mlflow_data:/app/mlflow_data"
+              echo "      - mlruns:/app/mlruns"
               echo "    restart: unless-stopped"
               echo "    environment:"
               echo "      - MLFLOW_TRACKING_URI=http://localhost:5002"
+              echo "      - MLFLOW_BACKEND_STORE_URI=sqlite:////app/mlflow_data/mlflow.db"
+              echo "      - MLFLOW_SERVE_ARTIFACTS=true"
+              echo "      - MLFLOW_REGISTRY_STORE_URI=sqlite:////app/mlflow_data/mlflow.db"
               echo ""
               echo "  flask-app:"
               echo "    image: ${DOCKER_HUB_USER}/mlops-flask:${VERSION}"
@@ -85,35 +110,38 @@ jobs:
               echo '      - "5001:5001"'
               echo "    networks:"
               echo "      - mlops-network"
+              echo "    volumes:"
+              echo "      - models:/app/models"
+              echo "      - tuning_results:/app/tuning_results"
+              echo "      - mlflow_data:/app/mlflow_data"
+              echo "      - mlruns:/app/mlruns"
               echo "    environment:"
               echo "      - MLFLOW_TRACKING_URI=http://mlflow:5002"
+              echo "      - FLASK_ENV=production"
               echo "    depends_on:"
               echo "      - mlflow"
               echo ""
               echo "networks:"
               echo "  mlops-network:"
               echo "    driver: bridge"
+              echo ""
+              echo "volumes:"
+              echo "  mlflow_data:"
+              echo "    driver: local"
+              echo "  models:"
+              echo "    driver: local"
+              echo "  tuning_results:"
+              echo "    driver: local"
+              echo "  mlruns:"
+              echo "    driver: local"
             } > docker-compose.test.yml
             
             cat docker-compose.test.yml
       - run:
-          name: Push images to Docker Hub
+          name: Test with docker-compose
           command: |
-            # Push Flask app image
-            echo "Pushing Flask app image to Docker Hub with version tag: ${VERSION}"
-            docker push ${DOCKER_HUB_USER}/mlops-flask:${VERSION}
-            docker push ${DOCKER_HUB_USER}/mlops-flask:latest
-            
-            # Push MLflow image
-            echo "Pushing MLflow image to Docker Hub with version tag: ${VERSION}"
-            docker push ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}
-            docker push ${DOCKER_HUB_USER}/mlops-mlflow:latest
-            
-            echo "Successfully pushed images:"
-            echo "- ${DOCKER_HUB_USER}/mlops-flask:${VERSION}"
-            echo "- ${DOCKER_HUB_USER}/mlops-flask:latest"
-            echo "- ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}"
-            echo "- ${DOCKER_HUB_USER}/mlops-mlflow:latest"
+            docker compose -f docker-compose.test.yml config
+            echo "Docker compose configuration is valid"
 
 workflows:
   version: 2
