@@ -85,22 +85,21 @@ The application has been packaged and pushed to Docker Hub, you can use it direc
 
 ```bash
 # Pull image from Docker Hub
-docker pull fistdat/mlops-flask:v1.6
+docker pull fistdat/mlops-flask:latest
 
 # Run container from image
-docker run -d -p 5001:5001 --name mlops-flask fistdat/mlops-flask:v1.6
+docker run -d -p 5001:5001 --name mlops-flask fistdat/mlops-flask:latest
 ```
 
 Docker images available at:
 - `fistdat/mlops-flask:latest` - latest version
-- `fistdat/mlops-flask:v1.6` - stable version v1.6
 
 ### CI/CD Integration with CircleCI
 
 This project is integrated with CircleCI to automate the build and deploy process to Docker Hub. Whenever changes are pushed to the `main` branch:
 
 1. CircleCI automatically builds the Docker image
-2. CircleCI pushes the image to Docker Hub with both `latest` and new version (v1.X) tags
+2. CircleCI pushes the image to Docker Hub with both `latest` and new version (vX.X) tags
 3. The pipeline is configured to run tests before building and pushing
 
 Details about the CI/CD setup and configuration can be found in the [CI_SETUP.md](CI_SETUP.md) file.
