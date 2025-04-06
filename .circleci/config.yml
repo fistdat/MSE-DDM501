@@ -60,39 +60,40 @@ jobs:
           command: |
             docker images | grep ${DOCKER_HUB_USER}
       - run:
-          name: Create docker-compose.test.yml for local testing
+          name: Create docker-compose test file
           command: |
-            cat > docker-compose.test.yml <<EOL
-            version: '3.8'
-            
-            services:
-              mlflow:
-                image: ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}
-                container_name: mlops-mlflow
-                ports:
-                  - "5002:5002"
-                networks:
-                  - mlops-network
-                restart: unless-stopped
-                environment:
-                  - MLFLOW_TRACKING_URI=http://localhost:5002
-              
-              flask-app:
-                image: ${DOCKER_HUB_USER}/mlops-flask:${VERSION}
-                container_name: mlops-flask
-                ports:
-                  - "5001:5001"
-                networks:
-                  - mlops-network
-                environment:
-                  - MLFLOW_TRACKING_URI=http://mlflow:5002
-                depends_on:
-                  - mlflow
-            
-            networks:
-              mlops-network:
-                driver: bridge
-            EOL
+            # Create docker-compose test file without heredoc syntax
+            {
+              echo 'version: "3.8"'
+              echo ""
+              echo "services:"
+              echo "  mlflow:"
+              echo "    image: ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}"
+              echo "    container_name: mlops-mlflow"
+              echo "    ports:"
+              echo '      - "5002:5002"'
+              echo "    networks:"
+              echo "      - mlops-network"
+              echo "    restart: unless-stopped"
+              echo "    environment:"
+              echo "      - MLFLOW_TRACKING_URI=http://localhost:5002"
+              echo ""
+              echo "  flask-app:"
+              echo "    image: ${DOCKER_HUB_USER}/mlops-flask:${VERSION}"
+              echo "    container_name: mlops-flask"
+              echo "    ports:"
+              echo '      - "5001:5001"'
+              echo "    networks:"
+              echo "      - mlops-network"
+              echo "    environment:"
+              echo "      - MLFLOW_TRACKING_URI=http://mlflow:5002"
+              echo "    depends_on:"
+              echo "      - mlflow"
+              echo ""
+              echo "networks:"
+              echo "  mlops-network:"
+              echo "    driver: bridge"
+            } > docker-compose.test.yml
             
             cat docker-compose.test.yml
       - run:
