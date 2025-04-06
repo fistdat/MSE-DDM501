@@ -1148,7 +1148,7 @@ def run_save_best_model():
 def find_best_model(experiment_id):
     """Tìm model tốt nhất dựa trên metric được chọn (mặc định là accuracy)"""
     try:
-        metric = request.args.get("metric", "accuracy")
+        metric = request.args.get("metric", "accuracy")  # Mặc định sử dụng accuracy
         run_id = request.args.get("run_id")
         logger.info(f"Finding best model for experiment {experiment_id}" + 
                    (f" based on {metric}" if run_id is None else f" with run_id {run_id}"))

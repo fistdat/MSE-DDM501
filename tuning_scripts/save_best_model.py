@@ -413,10 +413,10 @@ def save_best_model():
             logger.error(traceback.format_exc())
             # Tiếp tục thực hiện lưu model từ MLflow nếu có lỗi
     
-    # Tìm run tốt nhất từ MLflow
+    # Tìm run tốt nhất từ MLflow sử dụng accuracy làm metric chính
     run_info, metrics, params = find_best_run_by_metric(
         experiment_name=DEFAULT_EXPERIMENT_NAME, 
-        metric="f1_score", 
+        metric="accuracy",  # Thay đổi từ f1_score thành accuracy
         ascending=False
     )
     
@@ -457,7 +457,7 @@ def save_best_model():
             'artifact_uri': artifact_uri,
             'experiment_id': experiment_id,
             'run_name': run_name or 'gradient_boosting_run',
-            'model_description': f"Mô hình {model_type} với f1_score={metrics.get('f1_score', 0.931):.4f}, được huấn luyện trên {params.get('n_samples', 1000)} mẫu.",
+            'model_description': f"Mô hình {model_type} với accuracy={metrics.get('accuracy', 0.93):.4f}, được huấn luyện trên {params.get('n_samples', 1000)} mẫu.",
             'feature_names': params.get('feature_names', 'Không có thông tin'),
             'target_name': params.get('target_name', 'Không có thông tin'),
             'prediction_threshold': 0.5,

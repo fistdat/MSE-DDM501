@@ -657,6 +657,40 @@
             }
         }
         
+        // Kích hoạt nút tìm mô hình tốt nhất
+        document.addEventListener('DOMContentLoaded', function() {
+            const useBestModelBtn = document.getElementById('use-best-model-btn');
+            if (useBestModelBtn) {
+                useBestModelBtn.addEventListener('click', function() {
+                    // Gọi API để tìm mô hình tốt nhất dựa trên accuracy
+                    fetch('/find_best_model/1?metric=accuracy')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Lỗi khi tìm mô hình tốt nhất');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Đã tìm thấy mô hình tốt nhất:', data);
+                            
+                            // Sau khi tìm được mô hình tốt nhất, tự động lưu
+                            return fetch('/run_save_best_model');
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Lỗi khi lưu mô hình tốt nhất');
+                            }
+                            // Reload trang để hiển thị thông tin mô hình mới
+                            window.location.reload();
+                        })
+                        .catch(error => {
+                            console.error('Lỗi:', error);
+                            alert('Có lỗi xảy ra: ' + error.message);
+                        });
+                });
+            }
+        });
+        
         // Validate input for custom tuning
         document.addEventListener('DOMContentLoaded', function() {
             const customForm = document.querySelector('form[action="/run_custom_tuning"]');
