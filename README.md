@@ -69,6 +69,8 @@ Open your browser and navigate to: http://localhost:5001
 
 ### Using Docker
 
+#### Single Container
+
 ```bash
 make docker-build
 make docker-run
@@ -79,20 +81,40 @@ If you need to update files in the Docker container:
 make docker-cp-files
 ```
 
-### Docker Hub Image
+#### Docker Compose (Recommended)
 
-The application has been packaged and pushed to Docker Hub, you can use it directly with the command:
+For a complete setup with both Flask and MLflow services:
 
 ```bash
-# Pull image from Docker Hub
-docker pull fistdat/mlops-flask:latest
+# Build and run with Docker Compose
+docker compose -f docker/docker-compose.yml up --build
 
-# Run container from image
-docker run -d -p 5001:5001 --name mlops-flask fistdat/mlops-flask:latest
+# Or use the provided script
+bash docker/build-and-run.sh
 ```
 
-Docker images available at:
-- `fistdat/mlops-flask:latest` - latest version
+This will start:
+- MLflow server on port 5002
+- Flask application on port 5001
+
+### Docker Hub Images
+
+The application has been packaged and pushed to Docker Hub. You can use the images directly:
+
+```bash
+# Pull images from Docker Hub
+docker pull fistdat/mlops-flask:latest
+docker pull fistdat/mlops-mlflow:latest
+
+# Run with docker-compose
+curl -O https://raw.githubusercontent.com/fistdat/MSE-DDM501/main/docker/docker-compose.yml
+docker compose up
+```
+
+Available Docker images:
+- `fistdat/mlops-flask:latest` - Flask application (latest version)
+- `fistdat/mlops-mlflow:latest` - MLflow server (latest version)
+- Tagged versions are also available (e.g., `v1.7`, `v1.8`, etc.)
 
 ### CI/CD Integration with CircleCI
 

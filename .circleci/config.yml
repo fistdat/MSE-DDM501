@@ -33,33 +33,86 @@ jobs:
           docker-username: DOCKER_USERNAME
           docker-password: DOCKER_PASSWORD
       - run:
+          name: Install Docker Compose v2
+          command: |
+            sudo apt-get update && sudo apt-get install -y docker-compose-plugin
+            docker compose version || sudo apt-get install -y docker-compose
+      - run:
           name: Define VERSION variable
           command: |
             echo "export VERSION=v1.$(echo $CIRCLE_BUILD_NUM)" >> $BASH_ENV
             source $BASH_ENV
             echo "Set image version to: $VERSION"
       - run:
-          name: Build Docker image
+          name: Build and tag Flask image
           command: |
+            echo "Building Flask image with tag: ${DOCKER_HUB_USER}/mlops-flask:${VERSION}"
             docker build -t ${DOCKER_HUB_USER}/mlops-flask:${VERSION} -f docker/Dockerfile.flask .
-      - run:
-          name: Basic security check
-          command: |
-            # Simple container security check
-            echo "Security check skipped in simplified config"
-      - run:
-          name: Push to Docker Hub
-          command: |
-            echo "Pushing image to Docker Hub with version tag: ${VERSION}"
-            docker push ${DOCKER_HUB_USER}/mlops-flask:${VERSION}
-            
-            echo "Creating 'latest' tag as well"
             docker tag ${DOCKER_HUB_USER}/mlops-flask:${VERSION} ${DOCKER_HUB_USER}/mlops-flask:latest
+      - run:
+          name: Build and tag MLflow image
+          command: |
+            echo "Building MLflow image with tag: ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}"
+            docker build -t ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION} -f docker/Dockerfile.mlflow .
+            docker tag ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION} ${DOCKER_HUB_USER}/mlops-mlflow:latest
+      - run:
+          name: Verify images
+          command: |
+            docker images | grep ${DOCKER_HUB_USER}
+      - run:
+          name: Create docker-compose.test.yml for local testing
+          command: |
+            cat > docker-compose.test.yml <<EOL
+            version: '3.8'
+            
+            services:
+              mlflow:
+                image: ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}
+                container_name: mlops-mlflow
+                ports:
+                  - "5002:5002"
+                networks:
+                  - mlops-network
+                restart: unless-stopped
+                environment:
+                  - MLFLOW_TRACKING_URI=http://localhost:5002
+              
+              flask-app:
+                image: ${DOCKER_HUB_USER}/mlops-flask:${VERSION}
+                container_name: mlops-flask
+                ports:
+                  - "5001:5001"
+                networks:
+                  - mlops-network
+                environment:
+                  - MLFLOW_TRACKING_URI=http://mlflow:5002
+                depends_on:
+                  - mlflow
+            
+            networks:
+              mlops-network:
+                driver: bridge
+            EOL
+            
+            cat docker-compose.test.yml
+      - run:
+          name: Push images to Docker Hub
+          command: |
+            # Push Flask app image
+            echo "Pushing Flask app image to Docker Hub with version tag: ${VERSION}"
+            docker push ${DOCKER_HUB_USER}/mlops-flask:${VERSION}
             docker push ${DOCKER_HUB_USER}/mlops-flask:latest
+            
+            # Push MLflow image
+            echo "Pushing MLflow image to Docker Hub with version tag: ${VERSION}"
+            docker push ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}
+            docker push ${DOCKER_HUB_USER}/mlops-mlflow:latest
             
             echo "Successfully pushed images:"
             echo "- ${DOCKER_HUB_USER}/mlops-flask:${VERSION}"
             echo "- ${DOCKER_HUB_USER}/mlops-flask:latest"
+            echo "- ${DOCKER_HUB_USER}/mlops-mlflow:${VERSION}"
+            echo "- ${DOCKER_HUB_USER}/mlops-mlflow:latest"
 
 workflows:
   version: 2
